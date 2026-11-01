@@ -38,6 +38,23 @@ async function body<T>(req: Request): Promise<T> { try { return await req.json()
 
 interface GameRow { id: number; white: number; black: number; created_by: number; status: string; moves: string; fen: string; result: string | null; reason: string | null; created: number; updated: number; white_name?: string; black_name?: string }
 
+// Frister: 24 timer på hvert trekk (ellers taper man på tid), 3 dager på å godta en utfordring.
+const MOVE_LIMIT = DAY;
+const INVITE_LIMIT = 3 * DAY;
+async function expireGames(env: Env) {
+  const t = now();
+  // Hvem er i trekket? Antall trekk = antall mellomrom + 1 (0 hvis tomt). Partall: hvit i trekket.
+  const whiteToMove = "(g.moves = '' OR (length(g.moves) - length(replace(g.moves, ' ', '')) + 1) % 2 = 0)";
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE games AS g SET status = 'done',
+        result = CASE WHEN ${whiteToMove} THEN '0-1' ELSE '1-0' END,
+        reason = (SELECT name FROM users WHERE id = CASE WHEN ${whiteToMove} THEN g.white ELSE g.black END) || ' svarte ikke innen 24 timer',
+        updated = ?1
+      WHERE g.status = 'active' AND g.updated < ?2`).bind(t, t - MOVE_LIMIT),
+    env.DB.prepare("UPDATE games SET status = 'declined', reason = 'Utfordringen gikk ut', updated = ?1 WHERE status = 'pending' AND created < ?2").bind(t, t - INVITE_LIMIT),
+  ]);
+}
+
 const GAME_SELECT = 'SELECT g.*, w.name AS white_name, b.name AS black_name FROM games g JOIN users w ON w.id = g.white JOIN users b ON b.id = g.black';
 
 export const onRequest = async ({ request, env, params }: Ctx): Promise<Response> => {
@@ -101,9 +118,10 @@ export const onRequest = async ({ request, env, params }: Ctx): Promise<Response
     }
 
     // ---- Partier mot venner ----
+    if (a === 'games') await expireGames(env);
     if (a === 'games' && !b && method === 'GET') {
       const { results } = await env.DB.prepare(`${GAME_SELECT} WHERE (g.white = ? OR g.black = ?) AND (g.status IN ('pending','active') OR g.updated > ?) ORDER BY g.updated DESC LIMIT 30`).bind(me.id, me.id, now() - 14 * DAY).all<GameRow>();
-      return json({ me: me.id, games: results });
+      return json({ me: me.id, games: results, limit: MOVE_LIMIT, serverNow: now() });
     }
     if (a === 'games' && !b && method === 'POST') {
       const { opponent, color } = await body<{ opponent?: number; color?: string }>(request);
@@ -122,7 +140,7 @@ export const onRequest = async ({ request, env, params }: Ctx): Promise<Response
       const id = Number(b);
       const g = await env.DB.prepare(`${GAME_SELECT} WHERE g.id = ?`).bind(id).first<GameRow>();
       if (!g || (g.white !== me.id && g.black !== me.id)) return fail('Fant ikke partiet.', 404);
-      if (!c && method === 'GET') return json({ me: me.id, game: g });
+      if (!c && method === 'GET') return json({ me: me.id, game: g, limit: MOVE_LIMIT, serverNow: now() });
       if (c === 'accept' && method === 'POST') {
         if (g.status !== 'pending' || g.created_by === me.id) return fail('Kan ikke godta dette partiet.');
         await env.DB.prepare("UPDATE games SET status = 'active', updated = ? WHERE id = ?").bind(now(), id).run();

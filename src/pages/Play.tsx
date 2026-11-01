@@ -7,7 +7,9 @@ import { engine, scoreOf } from '../engine/stockfish';
 import { destsOf, needsPromotion, checkSquare, playUci, norsk, VALUES } from '../lib/chess';
 import { play } from '../lib/sound';
 import { useProgress, update, addXp, rateGame, checkBadges, getProgress, today } from '../lib/store';
-import { TopBar, Avatar, Modal, Confetti, IconHint, IconUndo, IconFlip, IconFlag, IconLock } from '../ui';
+import { TopBar, Avatar, Modal, Confetti, IconHint, IconUndo, IconFlip, IconFlag, IconLock, IconSwords } from '../ui';
+import { useGamesBadge } from './Friends';
+import { useAccount } from '../lib/account';
 
 export function isUnlocked(bot: Bot) {
   const s = getProgress();
@@ -20,6 +22,8 @@ export function isUnlocked(bot: Bot) {
 export function Play({ botId }: { botId?: string }) {
   const s = useProgress();
   const [choose, setChoose] = useState<string | null>(null);
+  const acc = useAccount();
+  const turns = useGamesBadge();
   if (botId) {
     const [id, color] = botId.split('-');
     return <Game key={botId} bot={id === 'venn' ? null : botById(id)} color={color === 'b' ? 'b' : 'w'} />;
@@ -32,6 +36,14 @@ export function Play({ botId }: { botId?: string }) {
     <div>
       <TopBar title="Spill" />
       <div class="row" style={{ marginBottom: '10px' }}><span class="chip">Spillrating: {Math.round(s.playRating)}</span></div>
+      <a href="#/venner" class="card click goodline" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+        <div class="row">
+          <div class="avatar" style={{ background: '#1f5c46', width: '52px', height: '52px', color: '#fbf9f4' }}><IconSwords size={28} /></div>
+          <div class="grow"><b>Spill mot venner</b><div class="small muted">{acc ? 'Mot andre på Sjakkreisen. Trekkene lagres, og dere har 24 timer på hvert trekk.' : 'Logg inn for å utfordre andre på Sjakkreisen'}</div></div>
+          {turns > 0 && <span class="chip" style={{ borderColor: 'var(--good)', color: 'var(--good)' }}>{turns === 1 ? 'Din tur' : `${turns} venter`}</span>}
+        </div>
+      </a>
+      <div class="label" style={{ margin: '14px 0 6px' }}>Mot datamaskinen</div>
       {BOTS.map((b) => {
         const rec = s.bots[b.id] ?? { w: 0, l: 0, d: 0 };
         const open = isUnlocked(b);
@@ -52,7 +64,7 @@ export function Play({ botId }: { botId?: string }) {
       <div class="card click" onClick={() => setChoose('venn')}>
         <div class="row">
           <div class="avatar" style={{ background: '#7d7466', width: '52px', height: '52px' }}><PieceSvg type="k" color="w" /></div>
-          <div class="grow"><b>Spill mot en venn</b><div class="small muted">To spillere på samme skjerm, for eksempel mot pappa</div></div>
+          <div class="grow"><b>Spill på samme skjerm</b><div class="small muted">To spillere ved samme telefon, for eksempel mot pappa i sofaen</div></div>
         </div>
       </div>
       {choose && (
@@ -64,7 +76,7 @@ export function Play({ botId }: { botId?: string }) {
               <p class="muted">{b.intro}</p>
             </div>
           ); })()}
-          {choose === 'venn' && <h2 class="center">Spill mot en venn</h2>}
+          {choose === 'venn' && <h2 class="center">Spill på samme skjerm</h2>}
           <p class="center"><b>Velg farge</b></p>
           <div class="btnrow">
             <button class="btn secondary" onClick={() => start(choose, 'w')}>Hvit</button>
@@ -221,7 +233,7 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
 
   return (
     <div>
-      <TopBar title={bot ? `Mot ${bot.name}` : 'Mot en venn'} back="#/spill" />
+      <TopBar title={bot ? `Mot ${bot.name}` : 'Samme skjerm'} back="#/spill" />
       <PlayerRow side={top} />
       <Board fen={fen} orientation={orientation} dests={myTurn ? destsOf(c) : undefined} onMove={onMove}
         needsPromotion={(f, t) => needsPromotion(c, f, t)} lastMove={last} check={checkSquare(c)} arrows={arrows} />

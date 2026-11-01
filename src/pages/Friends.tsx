@@ -18,6 +18,15 @@ export function myTurn(g: Game, me: number) {
   return (n % 2 === 0 ? g.white : g.black) === me;
 }
 
+// 24 timer på hvert trekk (sjekkes på serveren). Viser hvor lang tid som er igjen.
+export const MOVE_LIMIT = 24 * 3600 * 1000;
+export function timeLeft(g: Game) {
+  const ms = g.updated + MOVE_LIMIT - Date.now();
+  if (ms <= 0) return 'tiden er ute';
+  const h = Math.floor(ms / 3600000);
+  return h >= 1 ? `${h} t igjen` : `${Math.max(1, Math.round(ms / 60000))} min igjen`;
+}
+
 export function useGamesBadge() {
   const acc = useAccount();
   const [n, setN] = useState(0);
@@ -75,7 +84,7 @@ export function Friends() {
       {err && <div class="status bad">{err}</div>}
       {invites.map((g) => (
         <div key={g.id} class="card" style={{ borderColor: 'var(--gold)' }}>
-          <div class="row"><div class="grow"><b>{opp(g)}</b> utfordrer deg! Du er {g.white === me ? 'hvit' : 'svart'}.</div></div>
+          <div class="row"><div class="grow"><b>{opp(g)}</b> utfordrer deg! Du er {g.white === me ? 'hvit' : 'svart'}.<div class="small muted">Utfordringen gjelder i 3 dager.</div></div></div>
           <div class="btnrow" style={{ marginTop: '8px' }}><button class="btn good" onClick={() => act(g, 'accept')}>Spill</button><button class="btn secondary" onClick={() => act(g, 'decline')}>Nei takk</button></div>
         </div>
       ))}
@@ -83,10 +92,11 @@ export function Friends() {
       {active.map((g) => (
         <a key={g.id} href={'#/venn/' + g.id} class="card click row" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
           <div class="grow"><b>Mot {opp(g)}</b><div class="small muted">{g.moves ? Math.ceil(g.moves.split(' ').length / 2) : 0} trekk</div></div>
-          {myTurn(g, me) ? <span class="chip" style={{ borderColor: 'var(--good)', color: 'var(--good)' }}>Din tur</span> : <span class="chip">Venter</span>}
+          {myTurn(g, me) ? <span class="chip" style={{ borderColor: 'var(--good)', color: 'var(--good)' }}>Din tur · {timeLeft(g)}</span> : <span class="chip">Venter · {timeLeft(g)}</span>}
         </a>
       ))}
-      {waiting.map((g) => <div key={g.id} class="card small muted">Venter på at {opp(g)} godtar utfordringen.</div>)}
+      {waiting.map((g) => <a key={g.id} href={'#/venn/' + g.id} class="card click small muted" style={{ display: 'block', textDecoration: 'none' }}>Venter på at {opp(g)} godtar utfordringen.</a>)}
+      {active.length === 0 && invites.length === 0 && waiting.length === 0 && <div class="card small"><b>Slik virker det:</b> Trykk «Utfordre» ved en venn. Når vennen godtar, spiller dere ett trekk om gangen når det passer. Dere har 24 timer på hvert trekk. Den som ikke trekker innen fristen, taper på tid.</div>}
 
       <h2 style={{ marginTop: '14px' }}>Vennetabell</h2>
       <div class="card" style={{ padding: '6px 10px' }}>
@@ -178,7 +188,7 @@ export function FriendGame({ id }: { id: string }) {
   }
 
   const hist = ch.history();
-  const resultText = g.status === 'done' ? (g.result === '½-½' ? 'Remis' : ((g.result === '1-0') === (myColor === 'w') ? 'Du vant!' : `${oppName} vant`)) + (g.reason ? ` (${g.reason})` : '') : g.status === 'pending' ? (g.created_by === me ? `Venter på at ${oppName} godtar.` : `${oppName} har utfordret deg.`) : g.status === 'declined' ? 'Utfordringen ble avslått.' : canMove ? 'Din tur!' : `${oppName} tenker...`;
+  const resultText = g.status === 'done' ? (g.result === '½-½' ? 'Remis' : ((g.result === '1-0') === (myColor === 'w') ? 'Du vant!' : `${oppName} vant`)) + (g.reason ? ` (${g.reason})` : '') : g.status === 'pending' ? (g.created_by === me ? `Venter på at ${oppName} godtar.` : `${oppName} har utfordret deg.`) : g.status === 'declined' ? 'Utfordringen ble avslått.' : canMove ? `Din tur! (${timeLeft(g)})` : `Venter på ${oppName} (${timeLeft(g)})`;
 
   return (
     <div>
@@ -196,7 +206,7 @@ export function FriendGame({ id }: { id: string }) {
         {g.status === 'active' && <button class="btn secondary small" onClick={() => setConfirm(true)}><IconFlag size={18} /> Gi opp</button>}
         {g.status === 'pending' && g.created_by !== me && <button class="btn good small" onClick={() => api(`games/${g.id}/accept`, { method: 'POST' }).then(load)}>Godta</button>}
       </div>
-      <p class="small muted center" style={{ marginTop: '10px' }}>Trekkene lagres med en gang. Dere kan spille samtidig, eller ta ett trekk om gangen når det passer.</p>
+      <p class="small muted center" style={{ marginTop: '10px' }}>Trekkene lagres med en gang. Dere har 24 timer på hvert trekk. Den som ikke trekker innen fristen, taper på tid.</p>
       {confirm && (
         <Modal onClose={() => setConfirm(false)}>
           <h2>Gi opp?</h2>
