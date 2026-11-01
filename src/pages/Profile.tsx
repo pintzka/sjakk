@@ -69,6 +69,7 @@ export function Profile() {
         <h3>Fremgang</h3>
         {!acc && <p class="small muted">Uten bruker lagres fremgangen bare på denne enheten. Du kan flytte den med en kode.</p>}
         <div class="btnrow">
+          <button class="btn secondary small" onClick={() => { update((st) => { st.placementDone = false; }); location.hash = '#/'; }}>Ta nivåtesten på nytt</button>
           <button class="btn secondary small" onClick={() => { setTransfer(true); setCode(''); setMsg(''); }}>Flytt med kode</button>
           <button class="btn secondary small" onClick={() => setConfirm(true)}>Start helt på nytt</button>
         </div>
