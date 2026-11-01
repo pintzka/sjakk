@@ -1,0 +1,5 @@
+node_modules
+dist
+public/stockfish
+tools/out
+tools/scratch

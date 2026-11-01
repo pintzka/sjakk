@@ -1,0 +1,8 @@
+name = "sjakk"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sjakk-db"
+database_id = "fe879e40-f2e2-43ae-9d97-62de827e8ef3"

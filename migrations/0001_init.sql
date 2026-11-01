@@ -1,0 +1,38 @@
+-- Database for sjakk.pintzka.com (Cloudflare D1)
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  pin_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  fails INTEGER NOT NULL DEFAULT 0,
+  lock_until INTEGER NOT NULL DEFAULT 0,
+  created INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  token TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  expires INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS progress (
+  user_id INTEGER PRIMARY KEY,
+  data TEXT NOT NULL,
+  xp INTEGER NOT NULL DEFAULT 0,
+  puzzle_rating INTEGER NOT NULL DEFAULT 0,
+  play_rating INTEGER NOT NULL DEFAULT 0,
+  updated INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS games (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  white INTEGER NOT NULL,
+  black INTEGER NOT NULL,
+  created_by INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  moves TEXT NOT NULL DEFAULT '',
+  fen TEXT NOT NULL,
+  result TEXT,
+  reason TEXT,
+  created INTEGER NOT NULL,
+  updated INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS games_white ON games(white, status);
+CREATE INDEX IF NOT EXISTS games_black ON games(black, status);
