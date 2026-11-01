@@ -18,6 +18,7 @@ export interface PuzzleBoardProps {
   allowSolution?: boolean;
   arrows?: Arrow[];
   extraHighlights?: Record<string, Highlight>;
+  oneTry?: boolean;         // første feil avslutter oppgaven (nivåtest)
 }
 
 export function PuzzleBoard(p: PuzzleBoardProps) {
@@ -88,9 +89,12 @@ export function PuzzleBoard(p: PuzzleBoardProps) {
       mistakes.current += 1;
       const m = applyMove(uci);
       setFlash({ kind: 'bad', key: Date.now() }); play('bad');
-      setStatus({ text: 'Ikke helt. Prøv igjen!', kind: 'bad' });
+      setStatus({ text: p.oneTry ? 'Ikke riktig. Her er løsningen.' : 'Ikke helt. Prøv igjen!', kind: 'bad' });
       setLocked(true);
-      later(() => { if (m) { chRef.current.undo(); setFen(chRef.current.fen()); setLast(null); } setLocked(false); }, 650);
+      later(() => {
+        if (m) { chRef.current.undo(); setFen(chRef.current.fen()); setLast(null); }
+        if (p.oneTry) { mistakes.current -= 1; showSolution(); } else setLocked(false);
+      }, 650);
     }
   }
 

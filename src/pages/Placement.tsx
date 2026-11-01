@@ -63,7 +63,7 @@ export function Placement() {
     <div>
       <div class="topbar"><div class="title">Nivåtest</div><span class="chip">{i + 1} / {STEPS.length}</span></div>
       <div class="progress-dots">{STEPS.map((_, k) => <span key={k} class={k <= i ? 'on' : ''} />)}</div>
-      {pz && <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={onDone} allowHint={false} allowSolution />}
+      {pz && <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={onDone} allowHint={false} oneTry />}
       {answered !== null && <button class="btn block" style={{ marginTop: '10px' }} onClick={next}>{i + 1 >= STEPS.length ? 'Se resultatet' : 'Neste'}</button>}
     </div>
   );
