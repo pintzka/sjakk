@@ -5,7 +5,8 @@ import { Chess } from 'chess.js';
 import { writeFileSync } from 'node:fs';
 import { Engine, val } from './engine-node.mjs';
 
-const [games = '50', out = 'puzzles.json', seedArg = '1'] = process.argv.slice(2);
+const [games = '50', out = 'puzzles.json', seedArg = '1', mode = 'normal'] = process.argv.slice(2);
+const HARD = mode === 'hard';
 let seed = +seedArg * 9973;
 const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 const pick = (a) => a[Math.floor(rnd() * a.length)];
@@ -122,9 +123,15 @@ for (let g = 0; g < +games; g++) {
   let prevEval = 0;
   for (let ply = 0; ply < 110 && !ch.isGameOver(); ply++) {
     const fenBefore = ch.fen();
-    const blunder = ply >= 8 && rnd() < 0.16;
+    const blunder = ply >= 8 && rnd() < (HARD ? 0.22 : 0.16);
     let mv;
-    if (blunder) mv = uci(pick(ch.moves({ verbose: true })));
+    if (blunder && HARD) {
+      // Vanskelig modus: en «nesten god» feil (taper 120–600 cp) i stedet for et tilfeldig trekk
+      const a = await e.analyse(ch.fen(), 10, 6);
+      const best = val(a[0]);
+      const cands = a.slice(1).filter((x) => best - val(x) >= 120 && best - val(x) <= 600);
+      mv = cands.length ? pick(cands).move : await chooseMove(ch, ply);
+    } else if (blunder) mv = uci(pick(ch.moves({ verbose: true })));
     else mv = await chooseMove(ch, ply);
     play(ch, mv);
     if (ch.isGameOver()) break;
@@ -139,10 +146,10 @@ for (let g = 0; g < +games; g++) {
     const q = quick[0];
     if (!q) continue;
     const isMate = q.mate !== null && q.mate > 0 && q.mate <= 4;
-    if (!isMate && (q.cp === null || q.cp < 250)) continue;
+    if (!isMate && (q.cp === null || q.cp < (HARD ? 200 : 250))) continue;
     if (!isMate && preForSolver > 150) continue;
     if (isMate && preForSolver > 900) continue;
-    const line = await solve(ch.fen(), isMate ? q.mate : 3);
+    const line = await solve(ch.fen(), isMate ? q.mate : (HARD ? 4 : 3));
     if (!line) continue;
     // sjekk at matt faktisk blir matt
     let mateN = null;

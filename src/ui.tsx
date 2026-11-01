@@ -23,18 +23,17 @@ export const IconQuiz = I(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 
 export function Flame({ size = 18, on = true }: { size?: number; on?: boolean }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size}>
-      <path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-3-1-6 1-9z" fill={on ? '#ff8a3d' : '#6b6585'} />
-      <path d="M12 12c1 2 3 3 3 5a3 3 0 0 1-6 0c0-1 1-2 1.5-2.5.2 1 .8 1.5 1.5 1.5 0-1.5-.5-2.5 0-4z" fill={on ? '#ffd36b' : '#8d87a6'} />
+      <path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-3-1-6 1-9z" fill={on ? '#c4552f' : 'none'} stroke={on ? '#c4552f' : 'currentColor'} stroke-width="1.6" stroke-linejoin="round" />
     </svg>
   );
 }
 export function StarIcon({ size = 18 }: { size?: number }) {
-  return <svg viewBox="0 0 24 24" width={size} height={size}><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21l1.4-7L2 9.3l7-.8z" fill="#ffd36b" stroke="#b37800" stroke-width="1.2" stroke-linejoin="round" /></svg>;
+  return <svg viewBox="0 0 24 24" width={size} height={size}><path d="M12 2.5l2.9 6.3 6.8.8-5 4.7 1.3 6.8L12 17.7l-6 3.4 1.3-6.8-5-4.7 6.8-.8z" fill="var(--gold)" /></svg>;
 }
 
 export function Avatar({ piece, color, size = 44 }: { piece: PieceType; color: string; size?: number }) {
   return (
-    <div class="avatar" style={{ background: color, width: size + 'px', height: size + 'px' }}>
+    <div class="avatar" style={{ background: color, width: size + 'px', height: size + 'px' }} aria-hidden="true">
       <PieceSvg type={piece} color="w" />
     </div>
   );
@@ -49,7 +48,7 @@ export function Modal({ children, onClose }: { children: ComponentChildren; onCl
 }
 
 export function Confetti() {
-  const colors = ['#7c5cff', '#ffb020', '#2fd27a', '#ff5a8a', '#3fb6ff'];
+  const colors = ['#1f5c46', '#d6a21e', '#b3362a', '#2c5d8a', '#1f1d1a'];
   return (
     <div class="confetti">
       {Array.from({ length: 60 }, (_, i) => (
@@ -63,13 +62,13 @@ export function Toasts() {
   const [items, setItems] = useState<(Toast & { id: number })[]>([]);
   useEffect(() => onToast((t) => {
     const id = Date.now() + Math.random();
-    setItems((x) => [...x, { ...t, id }]);
+    setItems((x) => [...x, { ...t, id }].slice(-2)); // maks to om gangen, så de ikke dekker skjermen
     setTimeout(() => setItems((x) => x.filter((y) => y.id !== id)), 3200);
   }), []);
   return (
     <div style={{ position: 'fixed', top: '12px', left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', zIndex: 80, pointerEvents: 'none' }}>
       {items.map((t) => (
-        <div key={t.id} class="chip" style={{ background: t.kind === 'badge' ? '#2b2240' : t.kind === 'level' ? '#3a2a00' : 'var(--surface)', borderColor: t.kind === 'level' ? 'var(--gold)' : 'var(--accent)', padding: '8px 14px', animation: 'pop .25s', boxShadow: 'var(--shadow)' }}>
+        <div key={t.id} class="chip" style={{ background: 'var(--text)', color: 'var(--bg)', borderColor: 'var(--text)', padding: '8px 14px', animation: 'pop .25s', fontSize: '.9rem' }}>
           {t.kind === 'level' ? <StarIcon /> : t.kind === 'badge' ? <StarIcon /> : <IconBolt size={16} />} {t.text}
         </div>
       ))}
@@ -84,7 +83,7 @@ export function TopBar({ title, back }: { title?: string; back?: string }) {
   return (
     <div class="topbar">
       {back && <a href={back} class="btn secondary small" aria-label="Tilbake"><IconBack size={18} /></a>}
-      <div class="title">{title ?? 'Sjakkreisen'}</div>
+      <div class={`title ${title ? '' : 'brand'}`}>{title ?? 'Sjakkreisen'}</div>
       <span class="chip" title="Dager på rad"><Flame on={s.streak.lastDay === new Date().toISOString().slice(0, 10)} /> {s.streak.count}</span>
       <span class="chip" title={`${s.xp - cur} / ${next - cur} XP til neste nivå`}><StarIcon /> {lvl}</span>
     </div>
@@ -98,7 +97,7 @@ export function XpBar() {
   return (
     <div>
       <div class="row small" style={{ justifyContent: 'space-between', marginBottom: '4px' }}>
-        <b>Nivå {lvl}</b><span class="muted">{s.xp - cur} / {next - cur} XP</span>
+        <span class="label" style={{ color: 'var(--text)' }}>Nivå {lvl}</span><span class="muted">{s.xp - cur} / {next - cur} XP</span>
       </div>
       <div class="xpbar"><div style={{ width: Math.round(((s.xp - cur) / (next - cur)) * 100) + '%' }} /></div>
     </div>

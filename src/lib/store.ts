@@ -6,6 +6,7 @@ export interface Settings {
   boardTheme: string;
   showDests: boolean;
   theme: 'dark' | 'light';
+  v?: number;
 }
 
 export interface GameRecord { bot: string; result: 'win' | 'loss' | 'draw'; color: 'w' | 'b'; date: string; pgn: string; moves: number }
@@ -49,7 +50,7 @@ function fresh(): Progress {
     puzzles: { solved: 0, failed: 0, inARow: 0, bestInARow: 0, byTheme: {} },
     review: [], recent: [], games: [], daily: {},
     stats: { mates: 0, forks: 0, promotions: 0, hintsUsed: 0 },
-    settings: { sound: true, boardTheme: 'klassisk', showDests: true, theme: 'dark' },
+    settings: { sound: true, boardTheme: 'tre', showDests: true, theme: 'light', v: 2 },
   };
 }
 
@@ -59,7 +60,8 @@ function load(): Progress {
     if (raw) {
       const data = JSON.parse(raw);
       const base = fresh();
-      return { ...base, ...data, settings: { ...base.settings, ...data.settings }, stats: { ...base.stats, ...data.stats }, puzzles: { ...base.puzzles, ...data.puzzles }, streak: { ...base.streak, ...data.streak } };
+      const settings = data.settings?.v === 2 ? { ...base.settings, ...data.settings } : { ...base.settings, sound: data.settings?.sound ?? true, showDests: data.settings?.showDests ?? true };
+      return { ...base, ...data, settings, stats: { ...base.stats, ...data.stats }, puzzles: { ...base.puzzles, ...data.puzzles }, streak: { ...base.streak, ...data.streak } };
     }
   } catch { /* privat modus eller blokkert lagring */ }
   return fresh();
@@ -173,30 +175,30 @@ export function awardBadge(id: string) {
 
 export interface BadgeDef { id: string; name: string; desc: string; test: (s: Progress) => boolean; color: string }
 export const BADGES: BadgeDef[] = [
-  { id: 'first-puzzle', name: 'Første oppgave', desc: 'Løs én taktikkoppgave', color: '#3fb6ff', test: (s) => s.puzzles.solved >= 1 },
-  { id: 'puzzle-25', name: 'Oppgavejeger', desc: 'Løs 25 oppgaver', color: '#3fb6ff', test: (s) => s.puzzles.solved >= 25 },
-  { id: 'puzzle-100', name: 'Oppgavemester', desc: 'Løs 100 oppgaver', color: '#3fb6ff', test: (s) => s.puzzles.solved >= 100 },
-  { id: 'puzzle-500', name: 'Taktikkmaskin', desc: 'Løs 500 oppgaver', color: '#3fb6ff', test: (s) => s.puzzles.solved >= 500 },
-  { id: 'row-5', name: 'På rad', desc: '5 riktige oppgaver på rad', color: '#ffb020', test: (s) => s.puzzles.bestInARow >= 5 },
-  { id: 'row-15', name: 'Ustoppelig', desc: '15 riktige oppgaver på rad', color: '#ffb020', test: (s) => s.puzzles.bestInARow >= 15 },
-  { id: 'fork-10', name: 'Gaffelkongen', desc: 'Løs 10 gaffeloppgaver', color: '#2fd27a', test: (s) => (s.puzzles.byTheme['gaffel'] ?? 0) >= 10 },
-  { id: 'mate-25', name: 'Mattmaker', desc: 'Løs 25 mattoppgaver', color: '#ff5a5f', test: (s) => Object.entries(s.puzzles.byTheme).filter(([k]) => k.startsWith('mattI')).reduce((a, [, v]) => a + v, 0) >= 25 },
-  { id: 'rating-600', name: 'Over 600', desc: 'Oppgaverating over 600', color: '#a48bff', test: (s) => s.puzzleRating >= 600 },
-  { id: 'rating-800', name: 'Over 800', desc: 'Oppgaverating over 800', color: '#a48bff', test: (s) => s.puzzleRating >= 800 },
-  { id: 'rating-1000', name: 'Over 1000', desc: 'Oppgaverating over 1000', color: '#a48bff', test: (s) => s.puzzleRating >= 1000 },
-  { id: 'rating-1200', name: 'Over 1200', desc: 'Oppgaverating over 1200', color: '#a48bff', test: (s) => s.puzzleRating >= 1200 },
-  { id: 'streak-3', name: '3 dager', desc: 'Øv 3 dager på rad', color: '#ff8a3d', test: (s) => s.streak.best >= 3 },
-  { id: 'streak-7', name: 'En hel uke', desc: 'Øv 7 dager på rad', color: '#ff8a3d', test: (s) => s.streak.best >= 7 },
-  { id: 'streak-30', name: 'En hel måned', desc: 'Øv 30 dager på rad', color: '#ff8a3d', test: (s) => s.streak.best >= 30 },
-  { id: 'first-win', name: 'Første seier', desc: 'Vinn et parti mot en bot', color: '#2fd27a', test: (s) => Object.values(s.bots).some((b) => b.w > 0) },
-  { id: 'beat-tora', name: 'Tårnknuser', desc: 'Slå Tårn-Tora', color: '#2fd27a', test: (s) => (s.bots['tora']?.w ?? 0) > 0 },
-  { id: 'beat-dina', name: 'Dronningslager', desc: 'Slå Dronning-Dina', color: '#2fd27a', test: (s) => (s.bots['dina']?.w ?? 0) > 0 },
-  { id: 'beat-kare', name: 'Kongemaker', desc: 'Slå Kong Kåre', color: '#ffd36b', test: (s) => (s.bots['kare']?.w ?? 0) > 0 },
-  { id: 'lessons-5', name: 'Lærevillig', desc: 'Fullfør 5 leksjoner', color: '#7c5cff', test: (s) => Object.keys(s.lessons).length >= 5 },
-  { id: 'lessons-20', name: 'Sjakkprofessor', desc: 'Fullfør 20 leksjoner', color: '#7c5cff', test: (s) => Object.keys(s.lessons).length >= 20 },
-  { id: 'games-10', name: 'Spilleglad', desc: 'Spill 10 partier', color: '#2fd27a', test: (s) => s.games.length >= 10 },
-  { id: 'level-5', name: 'Nivå 5', desc: 'Nå nivå 5', color: '#ffb020', test: (s) => levelFromXp(s.xp) >= 5 },
-  { id: 'level-10', name: 'Nivå 10', desc: 'Nå nivå 10', color: '#ffb020', test: (s) => levelFromXp(s.xp) >= 10 },
+  { id: 'first-puzzle', name: 'Første oppgave', desc: 'Løs én taktikkoppgave', color: '#2c5d8a', test: (s) => s.puzzles.solved >= 1 },
+  { id: 'puzzle-25', name: 'Oppgavejeger', desc: 'Løs 25 oppgaver', color: '#2c5d8a', test: (s) => s.puzzles.solved >= 25 },
+  { id: 'puzzle-100', name: 'Oppgavemester', desc: 'Løs 100 oppgaver', color: '#2c5d8a', test: (s) => s.puzzles.solved >= 100 },
+  { id: 'puzzle-500', name: 'Taktikkmaskin', desc: 'Løs 500 oppgaver', color: '#2c5d8a', test: (s) => s.puzzles.solved >= 500 },
+  { id: 'row-5', name: 'På rad', desc: '5 riktige oppgaver på rad', color: '#b9800f', test: (s) => s.puzzles.bestInARow >= 5 },
+  { id: 'row-15', name: 'Ustoppelig', desc: '15 riktige oppgaver på rad', color: '#b9800f', test: (s) => s.puzzles.bestInARow >= 15 },
+  { id: 'fork-10', name: 'Gaffelkongen', desc: 'Løs 10 gaffeloppgaver', color: '#1f5c46', test: (s) => (s.puzzles.byTheme['gaffel'] ?? 0) >= 10 },
+  { id: 'mate-25', name: 'Mattmaker', desc: 'Løs 25 mattoppgaver', color: '#b3362a', test: (s) => Object.entries(s.puzzles.byTheme).filter(([k]) => k.startsWith('mattI')).reduce((a, [, v]) => a + v, 0) >= 25 },
+  { id: 'rating-600', name: 'Over 600', desc: 'Oppgaverating over 600', color: '#4b4466', test: (s) => s.puzzleRating >= 600 },
+  { id: 'rating-800', name: 'Over 800', desc: 'Oppgaverating over 800', color: '#4b4466', test: (s) => s.puzzleRating >= 800 },
+  { id: 'rating-1000', name: 'Over 1000', desc: 'Oppgaverating over 1000', color: '#4b4466', test: (s) => s.puzzleRating >= 1000 },
+  { id: 'rating-1200', name: 'Over 1200', desc: 'Oppgaverating over 1200', color: '#4b4466', test: (s) => s.puzzleRating >= 1200 },
+  { id: 'streak-3', name: '3 dager', desc: 'Øv 3 dager på rad', color: '#b7694c', test: (s) => s.streak.best >= 3 },
+  { id: 'streak-7', name: 'En hel uke', desc: 'Øv 7 dager på rad', color: '#b7694c', test: (s) => s.streak.best >= 7 },
+  { id: 'streak-30', name: 'En hel måned', desc: 'Øv 30 dager på rad', color: '#b7694c', test: (s) => s.streak.best >= 30 },
+  { id: 'first-win', name: 'Første seier', desc: 'Vinn et parti mot en bot', color: '#1f5c46', test: (s) => Object.values(s.bots).some((b) => b.w > 0) },
+  { id: 'beat-tora', name: 'Tårnknuser', desc: 'Slå Tårn-Tora', color: '#1f5c46', test: (s) => (s.bots['tora']?.w ?? 0) > 0 },
+  { id: 'beat-dina', name: 'Dronningslager', desc: 'Slå Dronning-Dina', color: '#1f5c46', test: (s) => (s.bots['dina']?.w ?? 0) > 0 },
+  { id: 'beat-kare', name: 'Kongemaker', desc: 'Slå Kong Kåre', color: '#b9800f', test: (s) => (s.bots['kare']?.w ?? 0) > 0 },
+  { id: 'lessons-5', name: 'Lærevillig', desc: 'Fullfør 5 leksjoner', color: '#5b6b3a', test: (s) => Object.keys(s.lessons).length >= 5 },
+  { id: 'lessons-20', name: 'Sjakkprofessor', desc: 'Fullfør 20 leksjoner', color: '#5b6b3a', test: (s) => Object.keys(s.lessons).length >= 20 },
+  { id: 'games-10', name: 'Spilleglad', desc: 'Spill 10 partier', color: '#1f5c46', test: (s) => s.games.length >= 10 },
+  { id: 'level-5', name: 'Nivå 5', desc: 'Nå nivå 5', color: '#b9800f', test: (s) => levelFromXp(s.xp) >= 5 },
+  { id: 'level-10', name: 'Nivå 10', desc: 'Nå nivå 10', color: '#b9800f', test: (s) => levelFromXp(s.xp) >= 10 },
 ];
 
 export function checkBadges() {
@@ -205,11 +207,11 @@ export function checkBadges() {
 
 // Brettfarger låses opp med nivå
 export const BOARD_THEMES = [
-  { id: 'klassisk', name: 'Klassisk', level: 1 },
-  { id: 'tre', name: 'Tre', level: 1 },
+  { id: 'tre', name: 'Valnøtt', level: 1 },
+  { id: 'klassisk', name: 'Filt', level: 1 },
   { id: 'is', name: 'Is', level: 3 },
-  { id: 'lava', name: 'Lava', level: 6 },
-  { id: 'natt', name: 'Natt', level: 10 },
+  { id: 'lava', name: 'Rust', level: 6 },
+  { id: 'natt', name: 'Skifer', level: 10 },
   { id: 'gull', name: 'Gull', level: 15 },
 ];
 

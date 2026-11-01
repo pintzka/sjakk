@@ -27,9 +27,11 @@ export function App() {
   const route = useHash();
   const [page, arg] = [route.split('/')[0], route.split('/').slice(1).join('/')];
   const turns = useGamesBadge();
+  // Holder nivåtesten åpen til resultatet er vist, selv om placementDone allerede er lagret
+  const [placing, setPlacing] = useState(false);
 
   let view;
-  if (!s.placementDone && (page === '' || page === 'reise') ) view = <Placement />;
+  if ((!s.placementDone || placing) && (page === '' || page === 'reise')) view = <Placement onStart={() => setPlacing(true)} onClose={() => setPlacing(false)} />;
   else switch (page) {
     case 'reise': view = <Journey />; break;
     case 'leksjon': view = <Lesson key={arg} id={arg} />; break;

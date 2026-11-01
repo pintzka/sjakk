@@ -35,7 +35,7 @@ export function Profile() {
         <div class="badges">
           {BADGES.map((b) => (
             <div key={b.id} class={`badge ${s.badges[b.id] ? '' : 'off'}`} title={b.desc}>
-              <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill={b.color} /><path d="M24 11l3.8 8.2 9 1-6.7 6.1 1.9 8.8L24 30.6l-8 4.5 1.9-8.8-6.7-6.1 9-1z" fill="#fff" opacity=".92" /></svg>
+              <svg viewBox="0 0 48 48"><path d="M24 3l17 7v12c0 11-7.5 19-17 23C14.5 41 7 33 7 22V10z" fill={b.color} /><path d="M24 14l2.9 6.2 6.8.8-5 4.6 1.3 6.7L24 29l-6 3.3 1.3-6.7-5-4.6 6.8-.8z" fill="#fbf9f4" /></svg>
               {b.name}<div class="muted" style={{ fontWeight: 400 }}>{b.desc}</div>
             </div>
           ))}
@@ -56,7 +56,7 @@ export function Profile() {
         <h3>Innstillinger</h3>
         <label class="toggle"><span>Lyd</span><input type="checkbox" checked={s.settings.sound} onChange={(e) => set((st) => { st.settings.sound = (e.target as HTMLInputElement).checked; })} /></label>
         <label class="toggle"><span>Vis hvor brikkene kan gå</span><input type="checkbox" checked={s.settings.showDests} onChange={(e) => set((st) => { st.settings.showDests = (e.target as HTMLInputElement).checked; })} /></label>
-        <label class="toggle"><span>Lyst tema</span><input type="checkbox" checked={s.settings.theme === 'light'} onChange={(e) => { set((st) => { st.settings.theme = (e.target as HTMLInputElement).checked ? 'light' : 'dark'; }); applyTheme(); }} /></label>
+        <label class="toggle"><span>Mørkt tema</span><input type="checkbox" checked={s.settings.theme === 'dark'} onChange={(e) => { set((st) => { st.settings.theme = (e.target as HTMLInputElement).checked ? 'dark' : 'light'; }); applyTheme(); }} /></label>
         <div class="small muted" style={{ margin: '8px 0 4px' }}>Brettfarger (flere låses opp med nivå)</div>
         <div class="tabs" style={{ flexWrap: 'wrap' }}>
           {BOARD_THEMES.map((t) => {
@@ -96,7 +96,7 @@ export function Profile() {
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
-  return <div class="card center" style={{ padding: '10px 6px' }}><div style={{ fontSize: '1.4rem', fontWeight: 900 }}>{value}</div><div class="small muted">{label}</div></div>;
+  return <div class="card center" style={{ padding: '10px 6px' }}><div class="bignum">{value}</div><div class="label" style={{ fontSize: '.62rem' }}>{label}</div></div>;
 }
 
 function RatingChart({ data }: { data: { d: string; puzzle: number; play: number }[] }) {
@@ -111,12 +111,12 @@ function RatingChart({ data }: { data: { d: string; puzzle: number; play: number
   return (
     <svg class="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Ratingutvikling">
       {ticks.map((t) => <g key={t}><line x1={P} x2={W - 8} y1={y(t)} y2={y(t)} stroke="var(--line)" /><text x={P - 4} y={y(t) + 4} font-size="10" text-anchor="end" fill="var(--muted)">{t}</text></g>)}
-      <path d={line('puzzle')} fill="none" stroke="#3fb6ff" stroke-width="2.5" stroke-linejoin="round" />
-      <path d={line('play')} fill="none" stroke="#ffb020" stroke-width="2.5" stroke-linejoin="round" />
+      <path d={line('puzzle')} fill="none" stroke="#2c5d8a" stroke-width="2.5" stroke-linejoin="round" />
+      <path d={line('play')} fill="none" stroke="#b9800f" stroke-width="2.5" stroke-linejoin="round" />
       <text x={P} y={H - 3} font-size="10" fill="var(--muted)">{data[0].d.slice(5)}</text>
       <text x={W - 8} y={H - 3} font-size="10" text-anchor="end" fill="var(--muted)">{data[data.length - 1].d.slice(5)}</text>
-      <text x={W - 8} y={y(data[data.length - 1].puzzle) - 6} font-size="10" text-anchor="end" fill="#3fb6ff">Oppgaver</text>
-      <text x={W - 8} y={y(data[data.length - 1].play) + 14} font-size="10" text-anchor="end" fill="#ffb020">Spill</text>
+      <text x={W - 8} y={y(data[data.length - 1].puzzle) - 6} font-size="10" text-anchor="end" fill="#2c5d8a">Oppgaver</text>
+      <text x={W - 8} y={y(data[data.length - 1].play) + 14} font-size="10" text-anchor="end" fill="#b9800f">Spill</text>
     </svg>
   );
 }

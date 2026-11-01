@@ -16,12 +16,12 @@ export type Step =
 export interface Lesson { id: string; title: string; steps: Step[] }
 export interface Island { id: string; name: string; desc: string; color: string; boss: string; lessons: Lesson[] }
 
-const G = '#2fd27a', R = '#ff5a5f', Y = '#ffb020';
+const G = '#2f7d4f', R = '#b3362a', Y = '#d6a21e';
 const EMPTY = '8/8/8/8/8/8/8/8 w - - 0 1';
 
 export const ISLANDS: Island[] = [
   {
-    id: 'regler', name: 'Regeløya', desc: 'Hvordan brikkene går, sjakk, matt og spesialtrekk.', color: 'linear-gradient(135deg,#2f8f5b,#1d5c3c)', boss: 'bo',
+    id: 'regler', name: 'Regeløya', desc: 'Hvordan brikkene går, sjakk, matt og spesialtrekk.', color: '#2f6b4f', boss: 'bo',
     lessons: [
       { id: 'brettet', title: 'Brettet', steps: [
         { t: 'info', fen: EMPTY, text: 'Sjakkbrettet har 64 felt. Linjene opp og ned heter <b>a til h</b>, og radene heter <b>1 til 8</b>. Hvert felt har et navn, for eksempel <b>e4</b>.', hl: { e4: 'mark' } },
@@ -80,7 +80,7 @@ export const ISLANDS: Island[] = [
     ],
   },
   {
-    id: 'matt', name: 'Mattøya', desc: 'Lær de viktigste måtene å sette matt på.', color: 'linear-gradient(135deg,#b23a48,#6d1f2c)', boss: 'sara',
+    id: 'matt', name: 'Mattøya', desc: 'Lær de viktigste måtene å sette matt på.', color: '#9b3a2e', boss: 'sara',
     lessons: [
       { id: 'baklinje', title: 'Baklinjematt', steps: [
         { t: 'info', fen: '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', text: 'Kongen er sperret inne av sine egne bønder. Et tårn eller en dronning på bakerste rad gir <b>baklinjematt</b>.', arrows: [{ from: 'd1', to: 'd8', color: G }], hl: { f7: 'mark', g7: 'mark', h7: 'mark' } },
@@ -115,7 +115,7 @@ export const ISLANDS: Island[] = [
     ],
   },
   {
-    id: 'taktikk', name: 'Taktikkøya', desc: 'Gafler, bindinger og andre triks som vinner brikker.', color: 'linear-gradient(135deg,#3b6fd8,#22408a)', boss: 'lars',
+    id: 'taktikk', name: 'Taktikkøya', desc: 'Gafler, bindinger og andre triks som vinner brikker.', color: '#2c5d8a', boss: 'lars',
     lessons: [
       { id: 'henger', title: 'Brikker som henger', steps: [
         { t: 'info', fen: 'r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 5', text: 'En brikke <b>henger</b> når den kan slås og ingen beskytter den. Før hvert trekk: sjekk om motstanderen har en brikke som henger, og om dine egne henger.' },
@@ -148,7 +148,7 @@ export const ISLANDS: Island[] = [
     ],
   },
   {
-    id: 'aapning', name: 'Åpningsøya', desc: 'Hvordan du starter partiet godt.', color: 'linear-gradient(135deg,#c98a1a,#7a4f00)', boss: 'tora',
+    id: 'aapning', name: 'Åpningsøya', desc: 'Hvordan du starter partiet godt.', color: '#a8741a', boss: 'tora',
     lessons: [
       { id: 'gylne', title: 'Tre gylne regler', steps: [
         { t: 'info', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', text: 'Tre gylne regler i åpningen: <b>1)</b> ta kontroll over sentrum, <b>2)</b> få ut springere og løpere, <b>3)</b> rokér tidlig.', arrows: [{ from: 'e2', to: 'e4', color: G }, { from: 'g1', to: 'f3', color: G }, { from: 'f1', to: 'c4', color: G }], hl: { d4: 'mark', e4: 'mark', d5: 'mark', e5: 'mark' } },
@@ -172,7 +172,7 @@ export const ISLANDS: Island[] = [
     ],
   },
   {
-    id: 'sluttspill', name: 'Sluttspilløya', desc: 'Vinn når det er få brikker igjen.', color: 'linear-gradient(135deg,#6a4bd8,#3a2685)', boss: 'dina',
+    id: 'sluttspill', name: 'Sluttspilløya', desc: 'Vinn når det er få brikker igjen.', color: '#4b4466', boss: 'dina',
     lessons: [
       { id: 'fribonde', title: 'Løp, bonde, løp!', steps: [
         { t: 'info', fen: '8/8/8/8/8/k7/6P1/6K1 w - - 0 1', text: 'I sluttspillet er bøndene supersterke. En bonde som ingen kan stoppe, blir til en dronning.' },

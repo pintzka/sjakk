@@ -102,7 +102,7 @@ export function PuzzleBoard(p: PuzzleBoardProps) {
     hinted.current = true;
     const exp = p.moves[idx];
     if (!hl[exp.slice(0, 2)]) { setHl({ [exp.slice(0, 2)]: 'hint' }); setStatus({ text: 'Se på den markerte brikken.', kind: 'info' }); }
-    else setShowArrows([{ from: exp.slice(0, 2), to: exp.slice(2, 4), color: '#3fb6ff' }]);
+    else setShowArrows([{ from: exp.slice(0, 2), to: exp.slice(2, 4), color: '#2c5d8a' }]);
   }
 
   function showSolution() {

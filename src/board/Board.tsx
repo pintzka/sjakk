@@ -178,14 +178,14 @@ function Arrows({ arrows, orientation }: { arrows: Arrow[]; orientation: Color }
   return (
     <svg class="arrows" viewBox="0 0 800 800">
       <defs>
-        {['#3fb6ff', '#2fd27a', '#ff5a5f', '#ffb020'].map((col) => (
+        {['#2c5d8a', '#2f7d4f', '#b3362a', '#d6a21e'].map((col) => (
           <marker id={'ah' + col.slice(1)} key={col} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto">
             <path d="M0 0L10 5L0 10z" fill={col} />
           </marker>
         ))}
       </defs>
       {arrows.map((a, i) => {
-        const col = a.color ?? '#3fb6ff';
+        const col = a.color ?? '#2c5d8a';
         const [x1, y1] = c(a.from); const [x2, y2] = c(a.to);
         const len = Math.hypot(x2 - x1, y2 - y1); const k = (len - 30) / len;
         return <line key={i} x1={x1} y1={y1} x2={x1 + (x2 - x1) * k} y2={y1 + (y2 - y1) * k} stroke={col} stroke-width="16" stroke-linecap="round" opacity=".85" marker-end={`url(#ah${col.slice(1)})`} />;

@@ -1,3 +1,5 @@
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/archivo';
 import { render } from 'preact';
 import { App } from './app';
 import { applyTheme } from './lib/store';

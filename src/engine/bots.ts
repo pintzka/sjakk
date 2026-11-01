@@ -12,7 +12,7 @@ export interface Bot {
 
 export const BOTS: Bot[] = [
   {
-    id: 'bo', name: 'Bonde-Bo', elo: 250, piece: 'p', color: '#8bd17c', undo: true,
+    id: 'bo', name: 'Bonde-Bo', elo: 250, piece: 'p', color: '#8fae6b', undo: true,
     intro: 'Bo har nettopp lært hvordan brikkene går. Han tar gjerne brikker, men tenker ikke så langt.',
     style: 'Tar alt han ser',
     lines: {
@@ -23,7 +23,7 @@ export const BOTS: Bot[] = [
     },
   },
   {
-    id: 'sara', name: 'Springer-Sara', elo: 500, piece: 'n', color: '#5cc7ff', undo: true,
+    id: 'sara', name: 'Springer-Sara', elo: 500, piece: 'n', color: '#6b97b5', undo: true,
     intro: 'Sara elsker springere og gafler. Hun passer på brikkene sine, men ikke alltid.',
     style: 'Liker gafler',
     lines: {
@@ -34,7 +34,7 @@ export const BOTS: Bot[] = [
     },
   },
   {
-    id: 'lars', name: 'Løper-Lars', elo: 800, piece: 'b', color: '#ffb020', undo: true,
+    id: 'lars', name: 'Løper-Lars', elo: 800, piece: 'b', color: '#d2a03c', undo: true,
     intro: 'Lars angriper hele tiden på skrå. Han glemmer ofte forsvaret når han angriper.',
     style: 'Angriper, glemmer forsvar',
     lines: {
@@ -45,7 +45,7 @@ export const BOTS: Bot[] = [
     },
   },
   {
-    id: 'tora', name: 'Tårn-Tora', elo: 1100, piece: 'r', color: '#ff8a3d', undo: false,
+    id: 'tora', name: 'Tårn-Tora', elo: 1100, piece: 'r', color: '#c4703f', undo: false,
     intro: 'Tora er solid som en borg. Hun gir sjelden bort brikker, så du må finne gode planer.',
     style: 'Solid og trygg',
     lines: {
@@ -56,7 +56,7 @@ export const BOTS: Bot[] = [
     },
   },
   {
-    id: 'dina', name: 'Dronning-Dina', elo: 1400, piece: 'q', color: '#ff5a8a', undo: false,
+    id: 'dina', name: 'Dronning-Dina', elo: 1400, piece: 'q', color: '#a3505f', undo: false,
     intro: 'Dina straffer de fleste feil. Spill trygt, utvikle brikkene og se etter taktikker.',
     style: 'Straffer feil',
     lines: {
@@ -67,7 +67,7 @@ export const BOTS: Bot[] = [
     },
   },
   {
-    id: 'kare', name: 'Kong Kåre', elo: 1900, piece: 'k', color: '#a48bff', undo: false,
+    id: 'kare', name: 'Kong Kåre', elo: 1900, piece: 'k', color: '#4a4766', undo: false,
     intro: 'Sjefsbossen. Kåre er sterkere enn de fleste klubbspillere. Klarer du å slå ham, er du skikkelig god.',
     style: 'Sjefsboss',
     lines: {

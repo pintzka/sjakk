@@ -51,7 +51,7 @@ export function Play({ botId }: { botId?: string }) {
       })}
       <div class="card click" onClick={() => setChoose('venn')}>
         <div class="row">
-          <div class="avatar" style={{ background: 'var(--surface2)', width: '52px', height: '52px' }}><PieceSvg type="k" color="b" /></div>
+          <div class="avatar" style={{ background: '#7d7466', width: '52px', height: '52px' }}><PieceSvg type="k" color="w" /></div>
           <div class="grow"><b>Spill mot en venn</b><div class="small muted">To spillere på samme skjerm, for eksempel mot pappa</div></div>
         </div>
       </div>
@@ -172,7 +172,7 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
     setHints(hints - 1);
     update((s) => { s.stats.hintsUsed += 1; });
     const [best] = await engine.go(ch.current.fen(), { depth: 10 });
-    if (best && alive.current) setArrows([{ from: best.move.slice(0, 2), to: best.move.slice(2, 4), color: '#2fd27a' }]);
+    if (best && alive.current) setArrows([{ from: best.move.slice(0, 2), to: best.move.slice(2, 4), color: '#2f7d4f' }]);
   }
 
   function undo() {
@@ -345,7 +345,7 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
             <>
               <div class="tabs">{mistakes.map((m, i) => <button key={i} class={`tab ${i === sel ? 'on' : ''}`} onClick={() => setSel(i)}>Trekk {Math.floor(m.ply / 2) + 1}: {m.kind}</button>)}</div>
               <Board fen={cur.fenBefore} orientation={color}
-                arrows={[{ from: cur.played.slice(0, 2), to: cur.played.slice(2, 4), color: '#ff5a5f' }, { from: cur.best.slice(0, 2), to: cur.best.slice(2, 4), color: '#2fd27a' }]} />
+                arrows={[{ from: cur.played.slice(0, 2), to: cur.played.slice(2, 4), color: '#b3362a' }, { from: cur.best.slice(0, 2), to: cur.best.slice(2, 4), color: '#2f7d4f' }]} />
               <div class="card" style={{ marginTop: '10px' }}>
                 <p><b style={{ color: cur.kind === 'Tabbe' ? 'var(--bad)' : 'var(--gold)' }}>{cur.kind}:</b> Du spilte <b>{cur.playedSan}</b> (rød pil). Bedre var <b>{cur.bestSan}</b> (grønn pil).</p>
                 <p class="muted" style={{ marginBottom: 0 }}>{cur.why}</p>

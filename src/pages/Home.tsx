@@ -16,7 +16,7 @@ export function Home() {
   return (
     <div>
       <TopBar />
-      <h1>Hei{name ? `, ${name}` : ''}!</h1>
+      <div class="hero"><div class="label">{new Date().toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>Hei{name ? `, ${name}` : ''}!</h1></div>
       <div class="card"><XpBar />
         <div class="row small" style={{ marginTop: '10px', gap: '14px' }}>
           <span class="row" style={{ gap: '4px' }}><Flame on={practicedToday} /> {s.streak.count} {s.streak.count === 1 ? 'dag' : 'dager'} på rad</span>
@@ -26,32 +26,34 @@ export function Home() {
       </div>
 
       {!acc && (
-        <a href="#/konto" class="card click" style={{ display: 'block', textDecoration: 'none', color: 'inherit', borderColor: 'var(--accent)' }}>
+        <a href="#/konto" class="card click accent">
           <div class="row"><IconUser /><div class="grow"><b>Lag bruker eller logg inn</b><div class="small muted">Lagre fremgangen og spill mot venner</div></div></div>
         </a>
       )}
       {friendTurns > 0 && (
-        <a href="#/venner" class="card click" style={{ display: 'block', textDecoration: 'none', color: 'inherit', borderColor: 'var(--good)' }}>
+        <a href="#/venner" class="card click goodline">
           <div class="row"><IconSwords /><div class="grow"><b>{friendTurns === 1 ? 'Et parti venter på deg' : `${friendTurns} partier venter på deg`}</b><div class="small muted">Mot venner</div></div></div>
         </a>
       )}
 
       {nl && (
-        <a href={`#/leksjon/${nl.lesson.id}`} class="island" style={{ display: 'block', background: nl.island.color, color: '#fff', textDecoration: 'none' }}>
-          <div class="small" style={{ opacity: .8 }}>Fortsett reisen · {nl.island.name}</div>
-          <h2 style={{ margin: '4px 0 0' }}>{nl.lesson.title}</h2>
+        <a href={`#/leksjon/${nl.lesson.id}`} class="island" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+          <div class="island-head" style={{ background: nl.island.color }}>
+            <div class="grow"><div class="label">Fortsett reisen · {nl.island.name}</div><h2>{nl.lesson.title}</h2></div>
+            <span class="btn small" style={{ background: '#fbf9f4', color: '#1f1d1a', borderColor: '#fbf9f4' }}>Start</span>
+          </div>
         </a>
       )}
 
-      <a href="#/dagens" class="card click" style={{ display: 'block', textDecoration: 'none', color: 'inherit', borderColor: dailyDone ? 'var(--line)' : 'var(--gold)' }}>
+      <a href="#/dagens" class={`card click ${dailyDone ? '' : 'goldline'}`}>
         <div class="row"><IconBolt /><div class="grow"><b>Dagens oppgave</b><div class="small muted">{dailyDone ? 'Løst i dag. Ny i morgen!' : 'Løs den for +25 ekstra XP'}</div></div>{dailyDone && <span class="chip" style={{ color: 'var(--good)' }}>Ferdig</span>}</div>
       </a>
 
       <div class="grid2">
-        <a href="#/oppgaver" class="card click" style={{ textDecoration: 'none', color: 'inherit' }}><IconBolt /><div><b>Taktikk</b></div><div class="small muted">{due ? `${due} til repetisjon` : 'Finn beste trekk'}</div></a>
-        <a href="#/spill" class="card click" style={{ textDecoration: 'none', color: 'inherit' }}><IconSwords /><div><b>Spill</b></div><div class="small muted">Mot boter eller venner</div></a>
-        <a href="#/reise" class="card click" style={{ textDecoration: 'none', color: 'inherit' }}><IconMap /><div><b>Leksjoner</b></div><div class="small muted">{Object.keys(s.lessons).length} fullført</div></a>
-        <a href="#/quiz" class="card click" style={{ textDecoration: 'none', color: 'inherit' }}><IconQuiz /><div><b>Quiz</b></div><div class="small muted">Rask trening</div></a>
+        <a href="#/oppgaver" class="card click"><IconBolt /><div><b>Taktikk</b></div><div class="small muted">{due ? `${due} til repetisjon` : 'Finn beste trekk'}</div></a>
+        <a href="#/spill" class="card click"><IconSwords /><div><b>Spill</b></div><div class="small muted">Mot boter eller venner</div></a>
+        <a href="#/reise" class="card click"><IconMap /><div><b>Leksjoner</b></div><div class="small muted">{Object.keys(s.lessons).length} fullført</div></a>
+        <a href="#/quiz" class="card click"><IconQuiz /><div><b>Quiz</b></div><div class="small muted">Rask trening</div></a>
       </div>
     </div>
   );

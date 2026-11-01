@@ -123,7 +123,7 @@ function MateQuiz({ onAgain }: { onAgain: () => void }) {
     <div>
       <div class="progress-dots">{qs.map((_, k) => <span key={k} class={k <= i ? 'on' : ''} />)}</div>
       <p class="lesson-text">{turn === 'w' ? 'Hvit' : 'Svart'} står i sjakk. Er det <b>sjakkmatt</b>?</p>
-      <Board fen={q.fen} orientation={turn as 'w' | 'b'} arrows={answer !== null && q.escape ? [{ from: q.escape.slice(0, 2), to: q.escape.slice(2, 4), color: '#2fd27a' }] : []} />
+      <Board fen={q.fen} orientation={turn as 'w' | 'b'} arrows={answer !== null && q.escape ? [{ from: q.escape.slice(0, 2), to: q.escape.slice(2, 4), color: '#2f7d4f' }] : []} />
       <div class="btnrow" style={{ marginTop: '10px' }}>
         <button class={`btn ${answer === null ? '' : q.mate ? 'good' : 'secondary'}`} onClick={() => pick(true)}>Ja, matt</button>
         <button class={`btn ${answer === null ? '' : !q.mate ? 'good' : 'secondary'}`} onClick={() => pick(false)}>Nei</button>
@@ -182,7 +182,7 @@ function HangQuiz({ onAgain }: { onAgain: () => void }) {
     <div>
       <div class="progress-dots">{qs.map((_, k) => <span key={k} class={k <= i ? 'on' : ''} />)}</div>
       <p class="lesson-text">{turn === 'w' ? 'Hvit' : 'Svart'} i trekket. Trykk på motstanderens brikke som du kan <b>slå gratis</b>.</p>
-      <Board fen={q.fen} orientation={turn} onSquareClick={click} highlights={hl} arrows={picked ? [{ from: q.from, to: q.target, color: '#2fd27a' }] : []} />
+      <Board fen={q.fen} orientation={turn} onSquareClick={click} highlights={hl} arrows={picked ? [{ from: q.from, to: q.target, color: '#2f7d4f' }] : []} />
       {picked && <><div class={`status ${picked === q.target ? 'good' : 'bad'}`}>{picked === q.target ? 'Riktig!' : 'Den grønne brikken var gratis.'}</div><button class="btn block" onClick={() => { setI(i + 1); setPicked(null); }}>Neste</button></>}
     </div>
   );
