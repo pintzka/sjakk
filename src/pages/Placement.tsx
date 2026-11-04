@@ -96,7 +96,7 @@ export function Placement({ onStart, onClose }: { onStart: () => void; onClose: 
     <div>
       <div class="topbar"><div class="title">Nivåtest</div><span class="chip">{i + 1} / {STEPS.length}</span></div>
       <div class="progress-dots">{STEPS.map((_, k) => <span key={k} class={k < answers.length ? (answers[k].ok ? 'on good' : 'on bad') : k === i ? 'on' : ''} />)}</div>
-      {pz && <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={onDone} allowHint={false} oneTry />}
+      {pz && <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={onDone} allowHint={false} oneTry engineCheck autoExplain />}
       {answered !== null && <button class="btn block" style={{ marginTop: '10px' }} onClick={next}>{i + 1 >= STEPS.length ? 'Se resultatet' : 'Neste'}</button>}
     </div>
   );

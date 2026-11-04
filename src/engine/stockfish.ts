@@ -1,6 +1,6 @@
 // Stockfish kjører i en Web Worker i nettleseren. Én motor deles av hele appen.
 export interface EngineLine { move: string; pv: string[]; cp: number | null; mate: number | null }
-export interface GoOptions { depth?: number; movetime?: number; multipv?: number; skill?: number }
+export interface GoOptions { depth?: number; movetime?: number; multipv?: number; skill?: number; searchmoves?: string[] }
 
 class StockfishEngine {
   private worker: Worker | null = null;
@@ -43,7 +43,7 @@ class StockfishEngine {
       this.send(`setoption name Skill Level value ${opts.skill ?? 20}`);
       this.send(`setoption name MultiPV value ${opts.multipv ?? 1}`);
       this.send('position fen ' + fen);
-      const goCmd = opts.movetime ? `go movetime ${opts.movetime}` : `go depth ${opts.depth ?? 10}`;
+      const goCmd = (opts.movetime ? `go movetime ${opts.movetime}` : `go depth ${opts.depth ?? 10}`) + (opts.searchmoves?.length ? ' searchmoves ' + opts.searchmoves.join(' ') : '');
       const lines = await this.wait(goCmd, (l) => l.startsWith('bestmove'));
       const best: Record<number, EngineLine> = {};
       for (const l of lines) {
@@ -66,6 +66,12 @@ class StockfishEngine {
 }
 
 export const engine = new StockfishEngine();
+// Egen motor for analyse (stillingsmåler, sjekk av oppgavetrekk), så boten ikke må vente.
+export const analyser = new StockfishEngine();
+
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('tidsavbrudd')), ms))]);
+}
 
 // Score sett fra den som er i trekket, som ett tall i centibonder (matt = ±10000)
 export function scoreOf(l: EngineLine | undefined): number {

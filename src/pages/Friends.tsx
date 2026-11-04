@@ -7,10 +7,23 @@ import { api, useAccount } from '../lib/account';
 import { destsOf, needsPromotion, checkSquare, playUci, norsk } from '../lib/chess';
 import { play } from '../lib/sound';
 import { levelFromXp, addXp, update } from '../lib/store';
-import { TopBar, Modal, Confetti, IconFlip, IconFlag } from '../ui';
+import { TopBar, Modal, Confetti, MoveList, IconFlip, IconFlag } from '../ui';
 
-interface User { id: number; name: string; xp: number; puzzle: number; play: number; active: number }
-interface Game { id: number; white: number; black: number; created_by: number; status: string; moves: string; fen: string; result: string | null; reason: string | null; white_name: string; black_name: string; updated: number }
+interface User { id: number; name: string; xp: number; puzzle: number; play: number; active: number; created: number; games: number }
+interface Game { id: number; white: number; black: number; created_by: number; status: string; moves: string; fen: string; result: string | null; reason: string | null; white_name: string; black_name: string; updated: number; last_chat?: number | null; last_chat_user?: number | null }
+interface ChatMsg { id: number; user_id: number; text: string; created: number }
+
+// Husker siste chatmelding du har sett i hvert parti (bare på denne enheten)
+const SEEN_KEY = 'sjakkreisen.chatSeen';
+function seenMap(): Record<string, number> { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch { return {}; } }
+function markSeen(gameId: number, id: number) { try { const m = seenMap(); if ((m[gameId] ?? 0) < id) { m[gameId] = id; localStorage.setItem(SEEN_KEY, JSON.stringify(m)); } } catch { /* */ } }
+export function unreadChat(g: Game, me: number) { return !!g.last_chat && g.last_chat_user !== me && (seenMap()[g.id] ?? 0) < g.last_chat; }
+
+function ago(ms: number) {
+  if (!ms) return 'aldri';
+  const d = Math.floor((Date.now() - ms) / 86400000);
+  return d <= 0 ? 'i dag' : d === 1 ? 'i går' : `for ${d} dager siden`;
+}
 
 export function myTurn(g: Game, me: number) {
   if (g.status !== 'active') return false;
@@ -34,7 +47,7 @@ export function useGamesBadge() {
     if (!acc) { setN(0); return; }
     let alive = true;
     const load = () => api<{ me: number; games: Game[] }>('games').then((r) => {
-      if (alive) setN(r.games.filter((g) => myTurn(g, r.me) || (g.status === 'pending' && g.created_by !== r.me)).length);
+      if (alive) setN(r.games.filter((g) => myTurn(g, r.me) || (g.status === 'pending' && g.created_by !== r.me) || unreadChat(g, r.me)).length);
     }).catch(() => {});
     load(); const t = setInterval(load, 20000);
     return () => { alive = false; clearInterval(t); };
@@ -92,18 +105,22 @@ export function Friends() {
       {active.map((g) => (
         <a key={g.id} href={'#/venn/' + g.id} class="card click row" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
           <div class="grow"><b>Mot {opp(g)}</b><div class="small muted">{g.moves ? Math.ceil(g.moves.split(' ').length / 2) : 0} trekk</div></div>
+          {unreadChat(g, me) && <span class="chip" style={{ borderColor: 'var(--info)', color: 'var(--info)' }}>Ny melding</span>}
           {myTurn(g, me) ? <span class="chip" style={{ borderColor: 'var(--good)', color: 'var(--good)' }}>Din tur · {timeLeft(g)}</span> : <span class="chip">Venter · {timeLeft(g)}</span>}
         </a>
       ))}
       {waiting.map((g) => <a key={g.id} href={'#/venn/' + g.id} class="card click small muted" style={{ display: 'block', textDecoration: 'none' }}>Venter på at {opp(g)} godtar utfordringen.</a>)}
       {active.length === 0 && invites.length === 0 && waiting.length === 0 && <div class="card small"><b>Slik virker det:</b> Trykk «Utfordre» ved en venn. Når vennen godtar, spiller dere ett trekk om gangen når det passer. Dere har 24 timer på hvert trekk. Den som ikke trekker innen fristen, taper på tid.</div>}
 
-      <h2 style={{ marginTop: '14px' }}>Vennetabell</h2>
+      <h2 style={{ marginTop: '14px' }}>Alle brukere ({users.length})</h2>
       <div class="card" style={{ padding: '6px 10px' }}>
         {users.map((u, i) => (
           <div key={u.id} class="row" style={{ padding: '8px 0', borderBottom: i < users.length - 1 ? '1px solid var(--line)' : 'none' }}>
             <b style={{ width: '22px' }}>{i + 1}</b>
-            <div class="grow"><b>{u.name}</b>{u.id === me && <span class="muted"> (deg)</span>}<div class="small muted">Nivå {levelFromXp(u.xp)} · Oppgaver {u.puzzle || '–'} · Spill {u.play || '–'}</div></div>
+            <div class="grow"><b>{u.name}</b>{u.id === me && <span class="muted"> (deg)</span>}
+              <div class="small muted">Nivå {levelFromXp(u.xp)} · Oppgaver {Math.round(u.puzzle) || '–'} · Spill {Math.round(u.play) || '–'}</div>
+              <div class="small muted">Registrert {u.created ? new Date(u.created).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' }) : '–'} · Sist aktiv {ago(u.active)} · {u.games} {u.games === 1 ? 'parti' : 'partier'} mot venner</div>
+            </div>
             {u.id !== me && <button class="btn small" onClick={() => setChallenge(u)}>Utfordre</button>}
           </div>
         ))}
@@ -144,8 +161,10 @@ export function FriendGame({ id }: { id: string }) {
   const prevStatus = useRef<string | null>(null);
   const prevMoves = useRef<string | null>(null);
 
-  const load = () => api<{ me: number; game: Game }>('games/' + id).then((r) => {
+  const [chat, setChat] = useState<ChatMsg[]>([]);
+  const load = () => api<{ me: number; game: Game; chat?: ChatMsg[] }>('games/' + id).then((r) => {
     setMe(r.me);
+    if (r.chat) setChat(r.chat);
     if (prevMoves.current !== null && r.game.moves !== prevMoves.current) play('move');
     if (prevStatus.current === 'active' && r.game.status === 'done') onFinished(r.game, r.me);
     prevMoves.current = r.game.moves; prevStatus.current = r.game.status;
@@ -194,25 +213,71 @@ export function FriendGame({ id }: { id: string }) {
     <div>
       {celebrate && <Confetti />}
       <TopBar title={`Mot ${oppName}`} back="#/venner" />
+      <div class="play-layout"><div class="play-board">
       <div class="player"><div class="avatar" style={{ background: 'var(--surface2)' }}><PieceSvg type="k" color={orientation === 'w' ? 'b' : 'w'} /></div><b class="grow">{orientation === myColor ? oppName : acc.name}</b></div>
       <Board fen={ch.fen()} orientation={orientation} dests={canMove ? destsOf(ch) : undefined} onMove={onMove}
         needsPromotion={(f, t) => needsPromotion(ch, f, t)} lastMove={lastUci ? [lastUci.slice(0, 2), lastUci.slice(2, 4)] : null} check={checkSquare(ch)} />
       <div class="player"><div class="avatar" style={{ background: 'var(--surface2)' }}><PieceSvg type="k" color={orientation} /></div><b class="grow">{orientation === myColor ? acc.name : oppName}</b></div>
+      </div><div class="play-side">
       <div class={`status ${g.status === 'done' ? 'info' : canMove ? 'good' : ''}`}>{resultText}</div>
       {err && <div class="status bad">{err}</div>}
-      <div class="movelist">{hist.map((m, i) => <span key={i}>{i % 2 === 0 ? `${i / 2 + 1}. ` : ''}{norsk(m)}</span>)}</div>
+      <MoveList sans={hist.map(norsk)} />
       <div class="btnrow" style={{ marginTop: '10px' }}>
         <button class="btn secondary small" onClick={() => setFlip(!flip)}><IconFlip size={18} /> Snu</button>
         {g.status === 'active' && <button class="btn secondary small" onClick={() => setConfirm(true)}><IconFlag size={18} /> Gi opp</button>}
         {g.status === 'pending' && g.created_by !== me && <button class="btn good small" onClick={() => api(`games/${g.id}/accept`, { method: 'POST' }).then(load)}>Godta</button>}
       </div>
+      <Chat gameId={g.id} me={me} oppName={oppName} msgs={chat} setMsgs={setChat} />
       <p class="small muted center" style={{ marginTop: '10px' }}>Trekkene lagres med en gang. Dere har 24 timer på hvert trekk. Den som ikke trekker innen fristen, taper på tid.</p>
+      </div></div>
       {confirm && (
         <Modal onClose={() => setConfirm(false)}>
           <h2>Gi opp?</h2>
           <div class="btnrow"><button class="btn secondary" onClick={() => setConfirm(false)}>Nei</button><button class="btn bad" onClick={() => { setConfirm(false); api(`games/${g.id}/resign`, { method: 'POST' }).then(load); }}>Gi opp</button></div>
         </Modal>
       )}
+    </div>
+  );
+}
+
+const QUICK = ['Lykke til!', 'Godt trekk!', 'Oi!', 'Din tur 😊', 'Takk for partiet!'];
+
+function Chat({ gameId, me, oppName, msgs, setMsgs }: { gameId: number; me: number; oppName: string; msgs: ChatMsg[]; setMsgs: (m: ChatMsg[]) => void }) {
+  const [text, setText] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const lastId = msgs.length ? msgs[msgs.length - 1].id : 0;
+  useEffect(() => {
+    if (lastId) markSeen(gameId, lastId);
+    if (box.current) box.current.scrollTop = box.current.scrollHeight;
+  }, [lastId]);
+  async function send(t: string) {
+    const v = t.trim();
+    if (!v || busy) return;
+    setBusy(true); setErr('');
+    try { const r = await api<{ chat: ChatMsg[] }>(`games/${gameId}/chat`, { method: 'POST', body: { text: v } }); setMsgs(r.chat); setText(''); }
+    catch (e) { setErr((e as Error).message); }
+    setBusy(false);
+  }
+  return (
+    <div class="chat">
+      <div class="label">Chat med {oppName}</div>
+      <div class="chat-box" ref={box}>
+        {msgs.length === 0 && <div class="small muted" style={{ padding: '6px 2px' }}>Ingen meldinger ennå. Si hei!</div>}
+        {msgs.map((m) => (
+          <div key={m.id} class={`chat-msg ${m.user_id === me ? 'mine' : ''}`}>
+            <span>{m.text}</span>
+            <time>{new Date(m.created).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}</time>
+          </div>
+        ))}
+      </div>
+      <div class="chat-quick">{QUICK.map((q) => <button key={q} class="tab" onClick={() => send(q)} disabled={busy}>{q}</button>)}</div>
+      <form class="chat-form" onSubmit={(e) => { e.preventDefault(); send(text); }}>
+        <input type="text" value={text} maxLength={200} placeholder="Skriv en melding" onInput={(e) => setText((e.target as HTMLInputElement).value)} />
+        <button class="btn small" type="submit" disabled={busy || !text.trim()}>Send</button>
+      </form>
+      {err && <div class="small" style={{ color: 'var(--bad)' }}>{err}</div>}
     </div>
   );
 }

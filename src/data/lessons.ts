@@ -9,7 +9,7 @@ export type Step =
   | { t: 'stars'; text: string; piece: 'p' | 'n' | 'b' | 'r' | 'q' | 'k'; from: string; stars: string[]; blockers?: string[] }
   | { t: 'squares'; text: string; fen: string; answer: string[]; ordered?: boolean }
   | { t: 'choice'; text: string; fen?: string; arrows?: LArrow[]; options: string[]; answer: number; explain: string }
-  | { t: 'puzzle'; text: string; fen: string; moves: string[]; free?: boolean }
+  | { t: 'puzzle'; text: string; fen: string; moves: string[]; free?: boolean; explain?: string }
   | { t: 'practice'; text: string; theme: string; count: number }
   | { t: 'play'; text: string; fen: string; goal: 'mate' | 'promote'; maxMoves: number };
 
@@ -57,24 +57,24 @@ export const ISLANDS: Island[] = [
         { t: 'info', fen: '8/8/8/8/8/8/4P3/8 w - - 0 1', text: 'Bonden går <b>ett felt rett fram</b>. Fra startfeltet kan den gå to. Den <b>slår på skrå</b>, ett felt fram.', arrows: [{ from: 'e2', to: 'e4' }] },
         { t: 'stars', piece: 'p', from: 'e2', stars: ['d5', 'e7', 'd8'], text: 'Stjernene er fiendebrikker. Bonden kan bare gå til en stjerne ved å <b>slå på skrå</b>.' },
         { t: 'info', fen: '8/4P1k1/8/8/8/8/8/4K3 w - - 0 1', text: 'Når bonden kommer til siste rad, blir den <b>forvandlet</b> til en annen brikke. Nesten alltid velger man dronning.' },
-        { t: 'puzzle', fen: '8/4P1k1/8/8/8/8/8/4K3 w - - 0 1', moves: ['e7e8q'], free: true, text: 'Flytt bonden til siste rad og velg dronning.' },
+        { t: 'puzzle', fen: '8/4P1k1/8/8/8/8/8/4K3 w - - 0 1', moves: ['e7e8q'], free: true, text: 'Flytt bonden til siste rad og velg dronning.', explain: 'Når bonden når siste rad, må den bli en annen brikke. Nesten alltid velger man dronning, fordi den er sterkest.' },
       ] },
       { id: 'sjakk-matt', title: 'Sjakk, matt og patt', steps: [
         { t: 'info', fen: '4k3/8/8/8/8/8/8/4R1K1 b - - 0 1', text: 'Når kongen blir angrepet, står den i <b>sjakk</b>. Da må du redde den: flytt kongen, slå brikken som angriper, eller sett en brikke imellom.', arrows: [{ from: 'e1', to: 'e8', color: R }] },
         { t: 'choice', fen: '4k3/8/8/8/8/8/8/4R1K1 b - - 0 1', text: 'Svart står i sjakk. Hvilket trekk redder kongen?', options: ['Kongen til d7', 'Kongen til e7', 'Ingenting, det er matt'], answer: 0, explain: 'På e7 står kongen fortsatt på e-linjen og er i sjakk. På d7 er den trygg.' },
         { t: 'info', fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', text: '<b>Sjakkmatt</b> betyr at kongen står i sjakk og ikke kan reddes. Da er partiet over.' },
-        { t: 'puzzle', fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', moves: ['a1a8'], text: 'Sett matt i ett trekk!' },
+        { t: 'puzzle', fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', moves: ['a1a8'], text: 'Sett matt i ett trekk!', explain: 'Ta8 er matt. Tårnet gir sjakk langs hele 8. rad, og kongen kan ikke gå fram fordi dens egne bønder på f7, g7 og h7 står i veien. Det kalles baklinjematt.' },
         { t: 'choice', fen: 'k7/8/1Q6/8/8/8/8/7K b - - 0 1', text: 'Svart er i trekket. Hva er dette?', options: ['Sjakkmatt', 'Patt', 'Svart kan flytte kongen'], answer: 1, explain: '<b>Patt</b>: Svart står ikke i sjakk, men har ingen lovlige trekk. Da blir det remis. Pass på dette når du vinner!' },
       ] },
       { id: 'rokade', title: 'Rokade', steps: [
         { t: 'info', fen: 'r3k2r/pppq1ppp/2npbn2/2b1p3/2B1P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1', text: '<b>Rokade</b> er et spesialtrekk: kongen går to felt mot tårnet, og tårnet hopper over på andre siden. Det setter kongen i sikkerhet.', arrows: [{ from: 'e1', to: 'g1', color: G }, { from: 'h1', to: 'f1', color: Y }] },
-        { t: 'puzzle', fen: 'r3k2r/pppq1ppp/2npbn2/2b1p3/2B1P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1', moves: ['e1g1'], free: true, text: 'Rokér kort: flytt kongen to felt mot h-tårnet.' },
-        { t: 'puzzle', fen: 'r3k2r/pppq1ppp/2npbn2/2b1p3/2B1P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1', moves: ['e1c1'], free: true, text: 'Rokér langt: flytt kongen to felt mot a-tårnet.' },
+        { t: 'puzzle', fen: 'r3k2r/pppq1ppp/2npbn2/2b1p3/2B1P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1', moves: ['e1g1'], free: true, text: 'Rokér kort: flytt kongen to felt mot h-tårnet.', explain: 'Ved kort rokade går kongen to felt mot h-tårnet, og tårnet hopper over til andre siden av kongen. Kongen står trygt i hjørnet, og tårnet kommer i spill.' },
+        { t: 'puzzle', fen: 'r3k2r/pppq1ppp/2npbn2/2b1p3/2B1P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1', moves: ['e1c1'], free: true, text: 'Rokér langt: flytt kongen to felt mot a-tårnet.', explain: 'Ved lang rokade går kongen to felt mot a-tårnet, og tårnet havner på d1. Da kommer tårnet rett inn på midten av brettet.' },
         { t: 'choice', text: 'Når er det IKKE lov å rokere?', options: ['Når kongen står i sjakk', 'Når motstanderen har flere brikker', 'Etter trekk ti'], answer: 0, explain: 'Du kan ikke rokere hvis kongen står i sjakk, må gå over et angrepet felt, eller hvis kongen eller tårnet har flyttet før.' },
       ] },
       { id: 'en-passant', title: 'En passant', steps: [
         { t: 'info', fen: 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3', text: 'Svart flyttet akkurat bonden <b>to felt</b>, fra d7 til d5, rett ved siden av den hvite bonden. Da kan hvit slå den <b>en passant</b>, som om den bare hadde gått ett felt.', arrows: [{ from: 'e5', to: 'd6', color: G }], hl: { d5: 'bad' } },
-        { t: 'puzzle', fen: 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3', moves: ['e5d6'], free: true, text: 'Slå bonden på d5 en passant.' },
+        { t: 'puzzle', fen: 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3', moves: ['e5d6'], free: true, text: 'Slå bonden på d5 en passant.', explain: 'Svart flyttet bonden fra d7 til d5, rett ved siden av bonden din på e5. Bare i trekket rett etter kan du slå den som om den bare hadde gått ett felt. Det heter en passant.' },
         { t: 'choice', text: 'Når kan du slå en passant?', options: ['Bare rett etter at motstanderens bonde gikk to felt', 'Når som helst', 'Bare med dronningen'], answer: 0, explain: 'En passant må gjøres med en gang. Venter du ett trekk, er sjansen borte.' },
       ] },
     ],
@@ -84,15 +84,15 @@ export const ISLANDS: Island[] = [
     lessons: [
       { id: 'baklinje', title: 'Baklinjematt', steps: [
         { t: 'info', fen: '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', text: 'Kongen er sperret inne av sine egne bønder. Et tårn eller en dronning på bakerste rad gir <b>baklinjematt</b>.', arrows: [{ from: 'd1', to: 'd8', color: G }], hl: { f7: 'mark', g7: 'mark', h7: 'mark' } },
-        { t: 'puzzle', fen: '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', moves: ['d1d8'], text: 'Sett baklinjematt.' },
-        { t: 'puzzle', fen: '1r4k1/5ppp/8/8/8/8/5PPP/1Q4K1 w - - 0 1', moves: ['b1b8'], text: 'Sett matt i ett trekk.' },
+        { t: 'puzzle', fen: '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', moves: ['d1d8'], text: 'Sett baklinjematt.', explain: 'Td8 er matt. Tårnet gir sjakk langs 8. rad, og kongen er stengt inne av sine egne bønder.' },
+        { t: 'puzzle', fen: '1r4k1/5ppp/8/8/8/8/5PPP/1Q4K1 w - - 0 1', moves: ['b1b8'], text: 'Sett matt i ett trekk.', explain: 'Dxb8 slår tårnet med sjakk. Tårnet var den eneste brikken som passet på baklinjen. Nå er kongen stengt inne av egne bønder, så det er matt.' },
         { t: 'info', text: 'Tips: Pass på din egen baklinje også! Et lite «luftehull» med h-bonden (h3) kan redde kongen.' },
         { t: 'practice', theme: 'mattI1', count: 3, text: 'Øv på matt i ett trekk.' },
       ] },
       { id: 'kysset', title: 'Dronningkysset', steps: [
         { t: 'info', fen: 'k7/1Q6/1K6/8/8/8/8/8 b - - 0 1', text: 'Dronningen setter matt rett ved siden av kongen når den er <b>beskyttet</b> av en annen brikke. Her beskytter den hvite kongen dronningen.', hl: { b7: 'good', b6: 'mark' } },
-        { t: 'puzzle', fen: 'k7/7Q/1K6/8/8/8/8/8 w - - 0 1', moves: ['h7b7'], text: 'Sett matt i ett trekk. Det finnes flere måter!' },
-        { t: 'puzzle', fen: '6k1/8/6K1/8/8/8/8/Q7 w - - 0 1', moves: ['a1a8'], text: 'Sett matt i ett trekk.' },
+        { t: 'puzzle', fen: 'k7/7Q/1K6/8/8/8/8/8 w - - 0 1', moves: ['h7b7'], text: 'Sett matt i ett trekk. Det finnes flere måter!', explain: 'Både Db7, Da7 og Dh8 er matt her. Felles for dem: dronningen gir sjakk, og kongen din på b6 dekker a7 og b7, så den svarte kongen har ingen steder å gå.' },
+        { t: 'puzzle', fen: '6k1/8/6K1/8/8/8/8/Q7 w - - 0 1', moves: ['a1a8'], text: 'Sett matt i ett trekk.', explain: 'Da8 er matt. Dronningen gir sjakk langs 8. rad, og kongen din på g6 dekker f7, g7 og h7. Svart har ingen felt å flykte til.' },
       ] },
       { id: 'trappematt', title: 'Trappematt med to tårn', steps: [
         { t: 'info', fen: '4k3/R7/1R6/8/8/8/8/6K1 w - - 0 1', text: 'To tårn kan sette matt alene. Det ene sperrer en rad, det andre gir sjakk på neste. Som å gå i en <b>trapp</b>.', arrows: [{ from: 'b6', to: 'b8', color: G }], hl: { a7: 'mark' } },
@@ -105,7 +105,7 @@ export const ISLANDS: Island[] = [
       ] },
       { id: 'taarnmatt', title: 'Tårnmatt', steps: [
         { t: 'info', fen: '4k3/8/4K3/8/8/8/8/R7 w - - 0 1', text: 'Med tårn og konge må kongene stå <b>rett overfor hverandre</b>. Da gir tårnet matt på kanten.', arrows: [{ from: 'a1', to: 'a8', color: G }] },
-        { t: 'puzzle', fen: '4k3/8/4K3/8/8/8/8/R7 w - - 0 1', moves: ['a1a8'], text: 'Sett matt.' },
+        { t: 'puzzle', fen: '4k3/8/4K3/8/8/8/8/R7 w - - 0 1', moves: ['a1a8'], text: 'Sett matt.', explain: 'Ta8 er matt. Kongene står rett overfor hverandre, så kongen din dekker d7, e7 og f7. Tårnet tar resten av 8. rad.' },
         { t: 'play', fen: '8/8/8/4k3/8/8/8/R3K3 w - - 0 1', goal: 'mate', maxMoves: 35, text: 'Sett matt med tårn og konge. Bruk tårnet til å sperre, og kongen til å presse. Du har 35 trekk.' },
       ] },
       { id: 'matt2', title: 'Matt i to', steps: [
@@ -124,22 +124,22 @@ export const ISLANDS: Island[] = [
       ] },
       { id: 'gaffel', title: 'Gaffel', steps: [
         { t: 'info', fen: 'r3k3/2N5/8/8/8/8/8/4K3 b - - 0 1', text: 'En <b>gaffel</b> er når én brikke angriper to brikker samtidig. Motstanderen kan bare redde én av dem. Springeren er den beste gaffelbrikken.', arrows: [{ from: 'c7', to: 'e8', color: R }, { from: 'c7', to: 'a8', color: R }] },
-        { t: 'puzzle', fen: 'r3k3/8/8/1N6/8/8/7P/4K3 w - - 0 1', moves: ['b5c7', 'e8d7', 'c7a8'], text: 'Finn springergaffelen og vinn tårnet.' },
-        { t: 'puzzle', fen: 'r3k3/8/8/8/8/8/5PPP/1Q4K1 w - - 0 1', moves: ['b1e4', 'e8f8', 'e4a8'], text: 'Dronningen kan også lage gafler. Gi sjakk og angrip tårnet samtidig.' },
+        { t: 'puzzle', fen: 'r3k3/8/8/1N6/8/8/7P/4K3 w - - 0 1', moves: ['b5c7', 'e8d7', 'c7a8'], text: 'Finn springergaffelen og vinn tårnet.', explain: 'Sc7+ er en gaffel: springeren gir sjakk og angriper tårnet på a8 samtidig. Kongen må flytte seg, og da tar du tårnet.' },
+        { t: 'puzzle', fen: 'r3k3/8/8/8/8/8/5PPP/1Q4K1 w - - 0 1', moves: ['b1e4', 'e8f8', 'e4a8'], text: 'Dronningen kan også lage gafler. Gi sjakk og angrip tårnet samtidig.', explain: 'De4+ gir sjakk langs e-linjen og angriper samtidig tårnet på a8 langs diagonalen. Kongen må flytte seg, og da tar du tårnet.' },
         { t: 'practice', theme: 'gaffel', count: 3, text: 'Finn gaffelen.' },
       ] },
       { id: 'binding', title: 'Binding', steps: [
         { t: 'info', fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', text: 'En brikke er <b>bundet</b> når den ikke kan flytte uten at noe viktigere bak den blir slått. Her er springeren på c6 bundet til kongen.', arrows: [{ from: 'b5', to: 'e8', color: R }], hl: { c6: 'mark' } },
-        { t: 'puzzle', fen: '4k3/pp6/3p4/4n3/8/8/5PPP/4R1K1 w - - 0 1', moves: ['f2f4'], text: 'Springeren på e5 er bundet til kongen av tårnet. Angrip den med noe som er mindre verdt!' },
-        { t: 'puzzle', fen: '4k3/3q4/8/8/P7/8/5PPP/4KB2 w - - 0 1', moves: ['f1b5', 'e8d8', 'b5d7'], text: 'Bind dronningen til kongen, og vinn den.' },
+        { t: 'puzzle', fen: '4k3/pp6/3p4/4n3/8/8/5PPP/4R1K1 w - - 0 1', moves: ['f2f4'], text: 'Springeren på e5 er bundet til kongen av tårnet. Angrip den med noe som er mindre verdt!', explain: 'Springeren på e5 kan ikke flytte, for da står kongen på e8 i sjakk fra tårnet ditt. Bonden angriper springeren, og du vinner den for en bonde (3 poeng mot 1).' },
+        { t: 'puzzle', fen: '4k3/3q4/8/8/P7/8/5PPP/4KB2 w - - 0 1', moves: ['f1b5', 'e8d8', 'b5d7'], text: 'Bind dronningen til kongen, og vinn den.', explain: 'Lb5 binder dronningen: den står mellom løperen og kongen og kan ikke gå bort. Du tar dronningen (9 poeng) og gir bare løperen (3 poeng).' },
       ] },
       { id: 'spidd', title: 'Spidd', steps: [
         { t: 'info', fen: '3q4/8/8/3k4/8/8/8/3RK3 b - - 0 1', text: 'Et <b>spidd</b> er en binding «baklengs»: du angriper en verdifull brikke, og når den flytter, slår du brikken bak.', arrows: [{ from: 'd1', to: 'd8', color: R }] },
-        { t: 'puzzle', fen: '3q4/8/8/3k4/8/8/8/R3K3 w - - 0 1', moves: ['a1d1', 'd5e5', 'd1d8'], text: 'Gi sjakk slik at du vinner dronningen.' },
+        { t: 'puzzle', fen: '3q4/8/8/3k4/8/8/8/R3K3 w - - 0 1', moves: ['a1d1', 'd5e5', 'd1d8'], text: 'Gi sjakk slik at du vinner dronningen.', explain: 'Td1+ er et spidd: tårnet gir sjakk langs d-linjen, og dronningen står bak kongen på d8. Når kongen flytter seg, tar du dronningen.' },
       ] },
       { id: 'avdekket', title: 'Avdekket angrep', steps: [
         { t: 'info', fen: '4k3/8/8/2q5/4N3/8/8/4RK2 w - - 0 1', text: 'Når en brikke flytter seg og <b>åpner linjen</b> for en annen brikke, får du et avdekket angrep. Her: når springeren flytter, gir tårnet sjakk.', arrows: [{ from: 'e1', to: 'e8', color: R }, { from: 'e4', to: 'c5', color: G }] },
-        { t: 'puzzle', fen: '4k3/8/8/2q5/4N3/8/8/4RK2 w - - 0 1', moves: ['e4c5'], text: 'Vinn dronningen med avdekket sjakk.' },
+        { t: 'puzzle', fen: '4k3/8/8/2q5/4N3/8/8/4RK2 w - - 0 1', moves: ['e4c5'], text: 'Vinn dronningen med avdekket sjakk.', explain: 'Når springeren flytter fra e4, gir tårnet på e1 sjakk. Det er avdekket sjakk. Springeren slår dronningen samtidig, og motstanderen må bruke trekket sitt på kongen.' },
       ] },
       { id: 'taktikkmix', title: 'Bland alt', steps: [
         { t: 'info', text: 'Nå blander vi alt: gafler, bindinger, brikker som henger og matt. Se etter <b>sjakker, slag og trusler</b>, i den rekkefølgen.' },
@@ -159,11 +159,11 @@ export const ISLANDS: Island[] = [
       { id: 'skolematt', title: 'Skolematt', steps: [
         { t: 'info', fen: 'r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3', text: 'Dette er <b>skolematt-fella</b>. Dronningen og løperen sikter begge mot f7, som bare kongen beskytter.', arrows: [{ from: 'h5', to: 'f7', color: R }, { from: 'c4', to: 'f7', color: R }] },
         { t: 'choice', fen: 'r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3', text: 'Svart i trekket. Hva bør svart spille?', options: ['Springer til f6 (angriper dronningen)', 'g6 eller dronning til e7', 'a6'], answer: 1, explain: 'Springer til f6 taper med en gang: dronningen slår på f7, matt. g6 jager dronningen, og De7 forsvarer f7.' },
-        { t: 'puzzle', fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4', moves: ['h5f7'], text: 'Svart forsvarte seg ikke. Sett matt!' },
+        { t: 'puzzle', fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4', moves: ['h5f7'], text: 'Svart forsvarte seg ikke. Sett matt!', explain: 'Dxf7 er matt. Dronningen slår bonden på f7 med sjakk, løperen på c4 passer på dronningen, og kongen har ingen felt å flykte til. I starten av partiet er f7 et svakt felt, fordi bare kongen forsvarer det.' },
       ] },
       { id: 'italiensk', title: 'Italiensk parti', steps: [
         { t: 'info', fen: 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4', text: '<b>Italiensk parti</b> er en åpning som følger alle de gylne reglene: e4, springer til f3, løper til c4 og rokade.' },
-        { t: 'puzzle', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', moves: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'f8c5', 'e1g1'], free: true, text: 'Spill italiensk: e4, springer til f3, løper til c4, og rokér kort.' },
+        { t: 'puzzle', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', moves: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'f8c5', 'e1g1'], free: true, text: 'Spill italiensk: e4, springer til f3, løper til c4, og rokér kort.', explain: 'Du får en bonde til midten, springeren og løperen kommer ut, løperen sikter mot f7, og etter rokaden står kongen trygt. Det er tre gode regler for åpningen.' },
       ] },
       { id: 'utvikling', title: 'Utvikling', steps: [
         { t: 'info', fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 6 5', text: 'Å <b>utvikle</b> betyr å få brikkene ut fra startfeltene. Flytt helst hver brikke bare én gang i åpningen.' },

@@ -76,7 +76,7 @@ function StepView({ step, onDone }: { step: Step; onDone: Done }) {
     case 'stars': return <StarsStep step={step} onDone={onDone} />;
     case 'squares': return <SquaresStep step={step} onDone={onDone} />;
     case 'choice': return <ChoiceStep step={step} onDone={onDone} />;
-    case 'puzzle': return <div><Text html={step.text} /><PuzzleBoard fen={step.fen} moves={step.moves} prompt=" " onDone={(r) => onDone(r.mistakes + (r.hinted ? 1 : 0))} allowSolution /></div>;
+    case 'puzzle': return <div><Text html={step.text} /><PuzzleBoard fen={step.fen} moves={step.moves} prompt=" " onDone={(r) => onDone(r.mistakes + (r.hinted ? 1 : 0))} allowSolution explain={step.explain} autoExplain={!step.free} engineCheck={!step.free} /></div>;
     case 'practice': return <PracticeStep step={step} onDone={onDone} />;
     case 'play': return <PlayStep step={step} onDone={onDone} />;
   }
@@ -189,7 +189,7 @@ function PracticeStep({ step, onDone }: { step: Extract<Step, { t: 'practice' }>
   return (
     <div>
       <Text html={`${step.text} <span class="muted">(${Math.min(n + 1, step.count)} av ${step.count})</span>`} />
-      {pz && <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={done} allowSolution />}
+      {pz && <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={done} allowSolution engineCheck autoExplain />}
       {solvedThis && n + 1 < step.count && <button class="btn block" style={{ marginTop: '10px' }} onClick={nextPz}>Neste oppgave</button>}
     </div>
   );

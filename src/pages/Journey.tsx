@@ -35,6 +35,7 @@ export function Journey() {
         <span class="chip"><StarIcon /> {starsSum}/{total * 3}</span>
         <a class="chip" href="#/quiz" style={{ textDecoration: 'none', color: 'inherit' }}><IconQuiz size={18} /> Quiz</a>
       </div>
+      <div class="journey-grid">
       {ISLANDS.map((isl, idx) => <IslandCard key={isl.id} island={isl} idx={idx} s={s} />)}
       <div class="island">
         <div class="island-head" style={{ background: '#1f1d1a' }}><div><div class="label">Finalen</div><h2>Sluttbossen</h2></div></div>
@@ -45,6 +46,7 @@ export function Journey() {
             <a class="btn gold small" href="#/spill">Utfordre</a>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

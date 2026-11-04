@@ -36,7 +36,7 @@ async function auth(req: Request, env: Env): Promise<{ id: number; name: string 
 
 async function body<T>(req: Request): Promise<T> { try { return await req.json() as T; } catch { return {} as T; } }
 
-interface GameRow { id: number; white: number; black: number; created_by: number; status: string; moves: string; fen: string; result: string | null; reason: string | null; created: number; updated: number; white_name?: string; black_name?: string }
+interface GameRow { id: number; white: number; black: number; created_by: number; status: string; moves: string; fen: string; result: string | null; reason: string | null; created: number; updated: number; white_name?: string; black_name?: string; last_chat?: number | null; last_chat_user?: number | null }
 
 // Frister: 24 timer på hvert trekk (ellers taper man på tid), 3 dager på å godta en utfordring.
 const MOVE_LIMIT = DAY;
@@ -55,7 +55,15 @@ async function expireGames(env: Env) {
   ]);
 }
 
-const GAME_SELECT = 'SELECT g.*, w.name AS white_name, b.name AS black_name FROM games g JOIN users w ON w.id = g.white JOIN users b ON b.id = g.black';
+const GAME_SELECT = `SELECT g.*, w.name AS white_name, b.name AS black_name,
+  (SELECT c.id FROM chat c WHERE c.game_id = g.id ORDER BY c.id DESC LIMIT 1) AS last_chat,
+  (SELECT c.user_id FROM chat c WHERE c.game_id = g.id ORDER BY c.id DESC LIMIT 1) AS last_chat_user
+  FROM games g JOIN users w ON w.id = g.white JOIN users b ON b.id = g.black`;
+
+async function chatOf(env: Env, gameId: number) {
+  const { results } = await env.DB.prepare('SELECT id, user_id, text, created FROM chat WHERE game_id = ? ORDER BY id DESC LIMIT 60').bind(gameId).all();
+  return results.reverse();
+}
 
 export const onRequest = async ({ request, env, params }: Ctx): Promise<Response> => {
   const route = params.route ?? [];
@@ -113,7 +121,9 @@ export const onRequest = async ({ request, env, params }: Ctx): Promise<Response
       return json({ ok: true });
     }
     if (a === 'users' && method === 'GET') {
-      const { results } = await env.DB.prepare('SELECT u.id, u.name, COALESCE(p.xp,0) AS xp, COALESCE(p.puzzle_rating,0) AS puzzle, COALESCE(p.play_rating,0) AS play, COALESCE(p.updated,0) AS active FROM users u LEFT JOIN progress p ON p.user_id = u.id ORDER BY xp DESC').all();
+      const { results } = await env.DB.prepare(`SELECT u.id, u.name, u.created, COALESCE(p.xp,0) AS xp, COALESCE(p.puzzle_rating,0) AS puzzle, COALESCE(p.play_rating,0) AS play, COALESCE(p.updated,0) AS active,
+          (SELECT COUNT(*) FROM games g WHERE (g.white = u.id OR g.black = u.id) AND g.status = 'done') AS games
+        FROM users u LEFT JOIN progress p ON p.user_id = u.id ORDER BY xp DESC`).all();
       return json({ users: results });
     }
 
@@ -140,7 +150,16 @@ export const onRequest = async ({ request, env, params }: Ctx): Promise<Response
       const id = Number(b);
       const g = await env.DB.prepare(`${GAME_SELECT} WHERE g.id = ?`).bind(id).first<GameRow>();
       if (!g || (g.white !== me.id && g.black !== me.id)) return fail('Fant ikke partiet.', 404);
-      if (!c && method === 'GET') return json({ me: me.id, game: g, limit: MOVE_LIMIT, serverNow: now() });
+      if (!c && method === 'GET') return json({ me: me.id, game: g, chat: await chatOf(env, id), limit: MOVE_LIMIT, serverNow: now() });
+      if (c === 'chat' && method === 'POST') {
+        const { text } = await body<{ text?: string }>(request);
+        const t = (text ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
+        if (!t) return fail('Skriv en melding.');
+        const lastMine = await env.DB.prepare('SELECT created FROM chat WHERE game_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1').bind(id, me.id).first<{ created: number }>();
+        if (lastMine && now() - lastMine.created < 1000) return fail('Vent litt mellom meldingene.', 429);
+        await env.DB.prepare('INSERT INTO chat (game_id, user_id, text, created) VALUES (?, ?, ?, ?)').bind(id, me.id, t, now()).run();
+        return json({ ok: true, chat: await chatOf(env, id) });
+      }
       if (c === 'accept' && method === 'POST') {
         if (g.status !== 'pending' || g.created_by === me.id) return fail('Kan ikke godta dette partiet.');
         await env.DB.prepare("UPDATE games SET status = 'active', updated = ? WHERE id = ?").bind(now(), id).run();

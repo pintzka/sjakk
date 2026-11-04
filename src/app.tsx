@@ -56,9 +56,10 @@ export function App() {
   return (
     <>
       <Toasts />
-      <div class="app">{view}</div>
+      <div class={`app ${hideNav ? 'nonav' : ''}`}>{view}</div>
       {!hideNav && (
         <nav class="nav"><div class="nav-inner">
+          <a href="#/" class="nav-brand">Sjakkreisen</a>
           {nav.map((n) => (
             <a key={n.href} href={n.href} class={n.on ? 'active' : ''} style={{ position: 'relative' }}>
               {n.icon}{n.label}

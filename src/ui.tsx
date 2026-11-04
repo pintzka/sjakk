@@ -18,6 +18,7 @@ export const IconHint = I(<><path d="M9 18h6M10 21h4" /><path d="M12 3a6 6 0 0 0
 export const IconUndo = I(<><path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-3" /></>);
 export const IconFlip = I(<><path d="M7 4v16M7 20l-3-3M7 20l3-3" /><path d="M17 20V4M17 4l-3 3M17 4l3 3" /></>);
 export const IconFlag = I(<><path d="M5 21V4" /><path d="M5 4h12l-2 4 2 4H5" /></>);
+export const IconGauge = I(<><path d="M3 15a9 9 0 0 1 18 0" /><path d="M12 15l4-5" /><path d="M3 19h18" /></>);
 export const IconQuiz = I(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 1-1 1.7v.5" /><path d="M12 17h.01" /></>);
 
 export function Flame({ size = 18, on = true }: { size?: number; on?: boolean }) {
@@ -102,6 +103,15 @@ export function XpBar() {
       <div class="xpbar"><div style={{ width: Math.round(((s.xp - cur) / (next - cur)) * 100) + '%' }} /></div>
     </div>
   );
+}
+
+// Trekkliste: «1. e4 e5 2. Sf3 …» (på PC som tabell med tre kolonner)
+export function MoveList({ sans }: { sans: string[] }) {
+  const out = [];
+  for (let i = 0; i < sans.length; i += 2) {
+    out.push(<span key={'n' + i} class="mn">{i / 2 + 1}.</span>, <span key={'w' + i}>{sans[i]}</span>, <span key={'b' + i}>{sans[i + 1] ?? ''}</span>);
+  }
+  return <div class="movelist">{out}</div>;
 }
 
 export const shuffle = <T,>(a: T[]) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };

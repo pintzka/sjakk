@@ -56,6 +56,7 @@ export function Profile() {
         <h3>Innstillinger</h3>
         <label class="toggle"><span>Lyd</span><input type="checkbox" checked={s.settings.sound} onChange={(e) => set((st) => { st.settings.sound = (e.target as HTMLInputElement).checked; })} /></label>
         <label class="toggle"><span>Vis hvor brikkene kan gå</span><input type="checkbox" checked={s.settings.showDests} onChange={(e) => set((st) => { st.settings.showDests = (e.target as HTMLInputElement).checked; })} /></label>
+        <label class="toggle"><span>Stillingsmåler i partier mot data</span><input type="checkbox" checked={s.settings.evalBar !== false} onChange={(e) => set((st) => { st.settings.evalBar = (e.target as HTMLInputElement).checked; })} /></label>
         <label class="toggle"><span>Mørkt tema</span><input type="checkbox" checked={s.settings.theme === 'dark'} onChange={(e) => { set((st) => { st.settings.theme = (e.target as HTMLInputElement).checked ? 'dark' : 'light'; }); applyTheme(); }} /></label>
         <div class="small muted" style={{ margin: '8px 0 4px' }}>Brettfarger (flere låses opp med nivå)</div>
         <div class="tabs" style={{ flexWrap: 'wrap' }}>
@@ -100,7 +101,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return <div class="card center" style={{ padding: '10px 6px' }}><div class="bignum">{value}</div><div class="label" style={{ fontSize: '.62rem' }}>{label}</div></div>;
 }
 
-function RatingChart({ data }: { data: { d: string; puzzle: number; play: number }[] }) {
+export function RatingChart({ data }: { data: { d: string; puzzle: number; play: number }[] }) {
   if (data.length < 2) return <p class="small muted">Grafen kommer når du har øvd noen dager.</p>;
   const W = 320, H = 150, P = 28;
   const vals = data.flatMap((d) => [d.puzzle, d.play]);

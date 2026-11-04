@@ -48,7 +48,7 @@ export function Puzzles({ daily }: { daily?: boolean }) {
       {!pz && <div class="card center muted">Laster oppgaver...</div>}
       {pz && (
         <>
-          <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={onDone} allowSolution />
+          <PuzzleBoard key={pz.id} fen={pz.fen} moves={pz.moves} setupMove onDone={onDone} allowSolution engineCheck autoExplain>
           <div class="row small muted" style={{ justifyContent: 'space-between', marginTop: '6px' }}>
             <span>{pz.themes.map((t) => THEMES[t] ?? t).join(' · ')}</span>
             {result && <span>Oppgavens rating: {pz.rating}</span>}
@@ -67,6 +67,12 @@ export function Puzzles({ daily }: { daily?: boolean }) {
               </div>
             </div>
           )}
+          <div class="card desktop-only small" style={{ marginTop: '10px' }}>
+            <div class="label">Slik velges oppgavene</div>
+            <p style={{ margin: '6px 0 0' }}>Du får oppgaver rundt din egen rating ({Math.round(s.puzzleRating)}). Løser du dem, går ratingen opp og oppgavene blir vanskeligere. Bommer du, kommer oppgaven tilbake for repetisjon etter 1, 3 og 7 dager.</p>
+            <p class="muted" style={{ margin: '6px 0 0' }}>Løst: {s.puzzles.solved} · Bommet: {s.puzzles.failed} · Beste rekke: {s.puzzles.bestInARow}</p>
+          </div>
+          </PuzzleBoard>
         </>
       )}
     </div>

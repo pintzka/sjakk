@@ -7,7 +7,8 @@ import { engine, scoreOf } from '../engine/stockfish';
 import { destsOf, needsPromotion, checkSquare, playUci, norsk, VALUES } from '../lib/chess';
 import { play } from '../lib/sound';
 import { useProgress, update, addXp, rateGame, checkBadges, getProgress, today } from '../lib/store';
-import { TopBar, Avatar, Modal, Confetti, IconHint, IconUndo, IconFlip, IconFlag, IconLock, IconSwords } from '../ui';
+import { TopBar, Avatar, Modal, Confetti, MoveList, IconHint, IconUndo, IconFlip, IconFlag, IconLock, IconSwords, IconGauge } from '../ui';
+import { EvalGauge } from '../board/EvalGauge';
 import { useGamesBadge } from './Friends';
 import { useAccount } from '../lib/account';
 
@@ -89,7 +90,9 @@ export function Play({ botId }: { botId?: string }) {
   );
 }
 
-type EndInfo = { result: 'win' | 'loss' | 'draw'; reason: string; delta?: number; xp?: number };
+type EndInfo = { result: 'win' | 'loss' | 'draw'; reason: string; delta?: number; xp?: number; hints?: number; penalty?: number };
+
+const HINT_XP = 10; // hvert trekkforslag koster 10 XP, og seier gir halv ratinggevinst
 
 function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
   const ch = useRef(new Chess());
@@ -100,6 +103,9 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
   const [bubble, setBubble] = useState(bot ? say(bot.lines.start) : '');
   const [arrows, setArrows] = useState<Arrow[]>([]);
   const [hints, setHints] = useState(3);
+  const hintsUsed = useRef(0);
+  const settings = useProgress().settings;
+  const showEval = settings.evalBar !== false;
   const [end, setEnd] = useState<EndInfo | null>(null);
   const [review, setReview] = useState(false);
   const [confirmResign, setConfirmResign] = useState(false);
@@ -111,7 +117,7 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
   useEffect(() => { if (bot && ch.current.turn() !== color) botTurn(); }, []);
 
   function afterMove(m: Move, byBot: boolean) {
-    setLast([m.from, m.to]); setArrows([]);
+    setLast([m.from, m.to]); setArrows([]); setSuggest('');
     play(ch.current.inCheck() ? 'check' : m.captured ? 'capture' : 'move');
     if (bot && m.captured && Math.random() < 0.45) setBubble(say(byBot ? bot.lines.capture : bot.lines.lost));
     refresh();
@@ -162,8 +168,12 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
     const info: EndInfo = { result, reason };
     if (bot) {
       const score = result === 'win' ? 1 : result === 'draw' ? 0.5 : 0;
-      info.delta = rateGame(bot.elo, score);
-      info.xp = result === 'win' ? 50 + Math.round(bot.elo / 40) : result === 'draw' ? 25 : 10;
+      const used = hintsUsed.current;
+      info.delta = rateGame(bot.elo, score, used ? 0.5 : 1);
+      const fullXp = result === 'win' ? 50 + Math.round(bot.elo / 40) : result === 'draw' ? 25 : 10;
+      info.hints = used;
+      info.penalty = Math.min(fullXp - 5, used * HINT_XP);
+      info.xp = fullXp - info.penalty;
       update((s) => {
         const r = s.bots[bot.id] ?? { w: 0, l: 0, d: 0 };
         if (result === 'win') r.w++; else if (result === 'loss') r.l++; else r.d++;
@@ -179,13 +189,21 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
     setEnd(info);
   }
 
+  const [suggest, setSuggest] = useState('');
   async function hint() {
     if (hints <= 0 || thinking) return;
     setHints(hints - 1);
+    hintsUsed.current += 1;
     update((s) => { s.stats.hintsUsed += 1; });
-    const [best] = await engine.go(ch.current.fen(), { depth: 10 });
-    if (best && alive.current) setArrows([{ from: best.move.slice(0, 2), to: best.move.slice(2, 4), color: '#2f7d4f' }]);
+    const fenNow = ch.current.fen();
+    const [best] = await engine.go(fenNow, { depth: 12 });
+    if (!best || !alive.current || ch.current.fen() !== fenNow) return;
+    setArrows([{ from: best.move.slice(0, 2), to: best.move.slice(2, 4), color: '#2f7d4f' }]);
+    let san = best.move;
+    try { san = norsk(new Chess(fenNow).move({ from: best.move.slice(0, 2), to: best.move.slice(2, 4), promotion: best.move[4] || undefined }).san); } catch { /* */ }
+    setSuggest(`Stockfish foreslår ${san} (grønn pil). Koster ${HINT_XP} XP.`);
   }
+  function toggleEval() { update((s) => { s.settings.evalBar = !showEval; }); }
 
   function undo() {
     if (thinking) return;
@@ -234,18 +252,26 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
   return (
     <div>
       <TopBar title={bot ? `Mot ${bot.name}` : 'Samme skjerm'} back="#/spill" />
+      <div class="play-layout"><div class="play-board">
       <PlayerRow side={top} />
+      {showEval && <EvalGauge fen={fen} whiteName={bot ? (color === 'w' ? 'Du' : bot.name) : 'Hvit'} blackName={bot ? (color === 'b' ? 'Du' : bot.name) : 'Svart'} />}
       <Board fen={fen} orientation={orientation} dests={myTurn ? destsOf(c) : undefined} onMove={onMove}
         needsPromotion={(f, t) => needsPromotion(c, f, t)} lastMove={last} check={checkSquare(c)} arrows={arrows} />
       <PlayerRow side={top === 'w' ? 'b' : 'w'} />
-      <div class="movelist">{hist.map((m, i) => <span key={i}>{i % 2 === 0 ? `${i / 2 + 1}. ` : ''}{norsk(m)}</span>)}</div>
+      </div><div class="play-side">
+      <div class="desktop-only label" style={{ marginBottom: '4px' }}>Trekk</div>
+      <MoveList sans={hist.map(norsk)} />
       <div class="btnrow" style={{ marginTop: '10px' }}>
-        {bot && <button class="btn secondary small" onClick={hint} disabled={!myTurn || hints <= 0}><IconHint size={18} /> Hint ({hints})</button>}
-        {(!bot || bot.undo) && <button class="btn secondary small" onClick={undo} disabled={!myTurn || hist.length < (bot ? 2 : 1)}><IconUndo size={18} /> Angre</button>}
+        {bot && <button class="btn secondary small" onClick={hint} disabled={!myTurn || hints <= 0}><IconHint size={18} /> Forslag ({hints})</button>}
+        <button class={`btn small ${showEval ? '' : 'secondary'}`} onClick={toggleEval} aria-label="Stillingsmåler av/på" title="Stillingsmåler av/på"><IconGauge size={18} /></button>
+        {(!bot || bot.undo) && <button class="btn secondary small" onClick={undo} disabled={!myTurn || hist.length < (bot ? 2 : 1)}><IconUndo size={18} /><span class="btn-text"> Angre</span></button>}
         <button class="btn secondary small" onClick={() => setOrientation(orientation === 'w' ? 'b' : 'w')}><IconFlip size={18} /></button>
         {bot && !end && <button class="btn secondary small" onClick={() => setConfirmResign(true)}><IconFlag size={18} /></button>}
       </div>
+      {suggest && !end && <div class="status good">{suggest}</div>}
       {end && !review && <div class="status info">{end.reason} <button class="btn small" style={{ marginLeft: '8px' }} onClick={() => setReview(true)}>Se gjennom</button></div>}
+      {bot && <BotStats bot={bot} />}
+      </div></div>
       {confirmResign && (
         <Modal onClose={() => setConfirmResign(false)}>
           <h2>Gi opp?</h2><p class="muted">Partiet teller som tap.</p>
@@ -270,6 +296,7 @@ function EndModal({ end, bot, onReview }: { end: EndInfo; bot: Bot | null; onRev
           <h1 style={{ marginTop: '8px' }}>{title}</h1>
           <p class="muted">{end.reason}</p>
           {bot && <p><b>+{end.xp} XP</b> · Spillrating {end.delta! >= 0 ? '+' : ''}{end.delta}</p>}
+          {bot && !!end.hints && <p class="small muted">Du brukte {end.hints} trekkforslag: −{end.penalty} XP{end.result !== 'loss' ? ' og halv ratinggevinst' : ''}.</p>}
           {end.result === 'loss' && <p class="small muted">Tips: se gjennom partiet for å finne de største feilene. Det er slik man blir bedre.</p>}
         </div>
         <div class="stack">
@@ -291,11 +318,13 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
   const [mistakes, setMistakes] = useState<Mistake[] | null>(null);
   const [counts, setCounts] = useState({ tabbe: 0, feil: 0, unoyaktig: 0, gode: 0 });
   const [sel, setSel] = useState(0);
+  const [curve, setCurve] = useState<{ ply: number; v: number }[]>([]);
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
   useEffect(() => {
     (async () => {
+      const pts: { ply: number; v: number }[] = [];
       const g = new Chess(); g.loadPgn(pgn);
       const moves = g.history({ verbose: true });
       const replay = new Chess();
@@ -314,6 +343,7 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
           const bestScore = clamp(scoreOf(best));
           const afterScore = replay.isCheckmate() ? 1500 : clamp(-scoreOf(after ?? undefined));
           const loss = bestScore - afterScore;
+          pts.push({ ply: i, v: bestScore }, { ply: i + 1, v: afterScore });
           const playedUci = m.from + m.to + (m.promotion ?? '');
           if (best && best.move !== playedUci && loss >= 70) {
             const kind = loss >= 300 ? 'Tabbe' : loss >= 150 ? 'Feil' : 'Unøyaktig';
@@ -335,7 +365,7 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
         } else replay.move(m);
       }
       out.sort((a, b) => b.loss - a.loss);
-      if (alive.current) { setMistakes(out.slice(0, 5)); setCounts(cnt); }
+      if (alive.current) { setMistakes(out.slice(0, 5)); setCounts(cnt); setCurve(pts); }
     })();
   }, []);
 
@@ -352,6 +382,7 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
             <div class="card center" style={{ padding: '8px' }}><b style={{ color: 'var(--gold)' }}>{counts.feil}</b><div class="small muted">Feil</div></div>
             <div class="card center" style={{ padding: '8px' }}><b style={{ color: 'var(--bad)' }}>{counts.tabbe}</b><div class="small muted">Tabber</div></div>
           </div>
+          {curve.length > 2 && <div class="card"><div class="label">Hvem ledet?</div><EvalCurve pts={curve} marks={mistakes.map((m) => m.ply)} /></div>}
           {mistakes.length === 0 && <div class="card center"><b>Ingen store feil! Supert parti.</b></div>}
           {cur && (
             <>
@@ -367,6 +398,44 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
           <a class="btn block" href="#/spill" style={{ marginTop: '6px' }}>Spill igjen</a>
         </>
       )}
+    </div>
+  );
+}
+
+// Graf over partiet sett fra deg: over streken leder du, under leder motstanderen. Røde prikker er feilene dine.
+function EvalCurve({ pts, marks }: { pts: { ply: number; v: number }[]; marks: number[] }) {
+  const W = 320, H = 120, P = 6;
+  const maxPly = Math.max(...pts.map((p) => p.ply), 1);
+  const x = (ply: number) => P + (ply / maxPly) * (W - 2 * P);
+  const y = (v: number) => H / 2 - (Math.max(-500, Math.min(500, v)) / 500) * (H / 2 - 8);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.ply).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const area = `${line} L${x(pts[pts.length - 1].ply).toFixed(1)},${H / 2} L${x(pts[0].ply).toFixed(1)},${H / 2} Z`;
+  return (
+    <svg class="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hvem ledet gjennom partiet">
+      <defs>
+        <clipPath id="ec-top"><rect x="0" y="0" width={W} height={H / 2} /></clipPath>
+        <clipPath id="ec-bot"><rect x="0" y={H / 2} width={W} height={H / 2} /></clipPath>
+      </defs>
+      <path d={area} fill="var(--good-soft)" clip-path="url(#ec-top)" />
+      <path d={area} fill="var(--bad-soft)" clip-path="url(#ec-bot)" />
+      <line x1={P} x2={W - P} y1={H / 2} y2={H / 2} stroke="var(--line-strong)" />
+      <path d={line} fill="none" stroke="var(--text)" stroke-width="1.8" stroke-linejoin="round" />
+      {marks.map((m) => { const p = pts.find((q) => q.ply === m + 1); return p ? <circle key={m} cx={x(p.ply)} cy={y(p.v)} r="3.5" fill="var(--bad)" /> : null; })}
+      <text x={P + 2} y="12" font-size="10" fill="var(--muted)">Du leder</text>
+      <text x={P + 2} y={H - 4} font-size="10" fill="var(--muted)">Motstanderen leder</text>
+    </svg>
+  );
+}
+
+// Bare på PC: litt mer info om motstanderen ved siden av brettet
+function BotStats({ bot }: { bot: Bot }) {
+  const s = useProgress();
+  const rec = s.bots[bot.id] ?? { w: 0, l: 0, d: 0 };
+  return (
+    <div class="card desktop-only" style={{ marginTop: '12px' }}>
+      <div class="row"><Avatar piece={bot.piece} color={bot.color} size={40} /><div class="grow"><b>{bot.name}</b><div class="small muted">ca. {bot.elo} · {bot.style}</div></div></div>
+      <p class="small" style={{ margin: '8px 0 0' }}>Dere har spilt {rec.w + rec.l + rec.d} partier: {rec.w} seire, {rec.l} tap, {rec.d} remis.</p>
+      <p class="small muted" style={{ margin: '6px 0 0' }}>Spillratingen din er {Math.round(s.playRating)}. Trekkforslag koster {HINT_XP} XP og halv ratinggevinst.</p>
     </div>
   );
 }

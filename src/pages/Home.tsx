@@ -3,6 +3,8 @@ import { useAccount } from '../lib/account';
 import { nextLesson } from './Journey';
 import { useGamesBadge } from './Friends';
 import { TopBar, XpBar, Flame, IconBolt, IconSwords, IconMap, IconQuiz, IconUser } from '../ui';
+import { RatingChart } from './Profile';
+import { botById } from '../engine/bots';
 
 export function Home() {
   const s = useProgress();
@@ -16,6 +18,7 @@ export function Home() {
   return (
     <div>
       <TopBar />
+      <div class="home-cols"><div>
       <div class="hero"><div class="label">{new Date().toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>Hei{name ? `, ${name}` : ''}!</h1></div>
       <div class="card"><XpBar />
         <div class="row small" style={{ marginTop: '10px', gap: '14px' }}>
@@ -49,12 +52,26 @@ export function Home() {
         <div class="row"><IconBolt /><div class="grow"><b>Dagens oppgave</b><div class="small muted">{dailyDone ? 'Løst i dag. Ny i morgen!' : 'Løs den for +25 ekstra XP'}</div></div>{dailyDone && <span class="chip" style={{ color: 'var(--good)' }}>Ferdig</span>}</div>
       </a>
 
-      <div class="grid2">
+      </div><div>
+      <div class="grid2 home-tiles">
         <a href="#/oppgaver" class="card click"><IconBolt /><div><b>Taktikk</b></div><div class="small muted">{due ? `${due} til repetisjon` : 'Finn beste trekk'}</div></a>
         <a href="#/spill" class="card click"><IconSwords /><div><b>Spill</b></div><div class="small muted">Mot boter eller venner</div></a>
         <a href="#/reise" class="card click"><IconMap /><div><b>Leksjoner</b></div><div class="small muted">{Object.keys(s.lessons).length} fullført</div></a>
         <a href="#/quiz" class="card click"><IconQuiz /><div><b>Quiz</b></div><div class="small muted">Rask trening</div></a>
       </div>
+      <div class="card desktop-only"><div class="label" style={{ marginBottom: '6px' }}>Ratingen din</div><RatingChart data={s.ratingHistory} /></div>
+      {s.games.length > 0 && (
+        <div class="card desktop-only">
+          <div class="label" style={{ marginBottom: '6px' }}>Siste partier</div>
+          {s.games.slice(0, 5).map((g, i) => (
+            <div key={i} class="row small" style={{ padding: '3px 0' }}>
+              <span class="grow">{g.bot === 'venn' ? 'Mot venn' : `Mot ${botById(g.bot).name}`} · {g.date}</span>
+              <b style={{ color: g.result === 'win' ? 'var(--good)' : g.result === 'loss' ? 'var(--bad)' : 'var(--muted)' }}>{g.result === 'win' ? 'Seier' : g.result === 'loss' ? 'Tap' : 'Remis'}</b>
+            </div>
+          ))}
+        </div>
+      )}
+      </div></div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ export interface Settings {
   boardTheme: string;
   showDests: boolean;
   theme: 'dark' | 'light';
+  evalBar?: boolean;   // stillingsmåler mot data (av/på), standard på
   v?: number;
 }
 
@@ -158,9 +159,11 @@ export function ratePuzzle(puzzleRating: number, solved: boolean): number {
   return delta;
 }
 
-export function rateGame(botElo: number, score: number): number {
+// factor < 1 gir mindre gevinst (f.eks. når man har brukt trekkforslag); tap teller fullt
+export function rateGame(botElo: number, score: number, factor = 1): number {
   const k = state.playGames < 10 ? 50 : 32;
-  const delta = Math.round(k * (score - expected(state.playRating, botElo)));
+  let delta = Math.round(k * (score - expected(state.playRating, botElo)));
+  if (delta > 0) delta = Math.round(delta * factor);
   update((s) => { s.playRating = Math.max(100, s.playRating + delta); s.playGames += 1; });
   logRating();
   return delta;
