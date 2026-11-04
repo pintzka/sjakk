@@ -44,7 +44,10 @@ export interface Progress {
   myPuzzles: MyPuzzle[];
   goal: { day: string; puzzles: number; games: number; lessons: number; done: boolean };
   savedGame: SavedGame | null;
+  // Åpningstreneren: én post per variant («italiensk/hoved»). reps = antall riktige repetisjoner på rad.
+  openings: Record<string, OpeningRep>;
 }
+export interface OpeningRep { learned: string; reps: number; due: string; clean: number; tries: number }
 
 const KEY = 'sjakkreisen.v1';
 
@@ -77,6 +80,7 @@ function fresh(): Progress {
     myPuzzles: [],
     goal: { day: today(), puzzles: 0, games: 0, lessons: 0, done: false },
     savedGame: null,
+    openings: {},
   };
 }
 

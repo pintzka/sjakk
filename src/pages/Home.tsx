@@ -2,7 +2,7 @@ import { useProgress, today, goalOf, GOAL, GOAL_BONUS, weekPoints, weekId } from
 import { useAccount } from '../lib/account';
 import { nextLesson } from './Journey';
 import { useGamesBadge } from './Friends';
-import { TopBar, XpBar, Flame, IconBolt, IconSwords, IconMap, IconQuiz, IconUser, IconTimer, IconTrophy } from '../ui';
+import { TopBar, XpBar, Flame, IconBolt, IconSwords, IconMap, IconQuiz, IconUser, IconTimer, IconTrophy, IconBook } from '../ui';
 import { RatingChart } from './Profile';
 import { botById } from '../engine/bots';
 
@@ -13,6 +13,7 @@ export function Home() {
   const friendTurns = useGamesBadge();
   const due = s.review.filter((r) => r.due <= today()).length;
   const dailyDone = !!s.daily[today()];
+  const openDue = Object.values(s.openings ?? {}).filter((r) => r.due <= today()).length;
   const practicedToday = s.streak.lastDay === today();
   const name = s.name || acc?.name;
   return (
@@ -60,6 +61,7 @@ export function Home() {
         <a href="#/oppgaver" class="card click"><IconBolt /><div><b>Taktikk</b></div><div class="small muted">{due ? `${due} til repetisjon` : 'Finn beste trekk'}</div></a>
         <a href="#/spill" class="card click"><IconSwords /><div><b>Spill</b></div><div class="small muted">Mot boter eller venner</div></a>
         <a href="#/reise" class="card click"><IconMap /><div><b>Leksjoner</b></div><div class="small muted">{Object.keys(s.lessons).length} fullført</div></a>
+        <a href="#/apninger" class="card click"><IconBook /><div><b>Åpninger</b></div><div class="small muted">{openDue ? `${openDue} til repetisjon` : 'Lær de første trekkene'}</div></a>
         <a href="#/quiz" class="card click"><IconQuiz /><div><b>Quiz</b></div><div class="small muted">Rask trening</div></a>
         <a href="#/lyn" class="card click"><IconTimer /><div><b>Lynrunde</b></div><div class="small muted">{s.rush.best ? `Rekord: ${s.rush.best}` : '3 minutter, 3 liv'}</div></a>
         <a href="#/tabell" class="card click"><IconTrophy /><div><b>Tabell</b></div><div class="small muted">Hvem leder denne uka?</div></a>
@@ -87,7 +89,7 @@ function GoalCard() {
   const items = [
     { label: 'Løs oppgaver', n: g.puzzles, of: GOAL.puzzles, href: '#/oppgaver' },
     { label: 'Spill et parti', n: g.games, of: GOAL.games, href: '#/spill' },
-    { label: 'Leksjon eller quiz', n: g.lessons, of: GOAL.lessons, href: '#/reise' },
+    { label: 'Leksjon, quiz eller åpning', n: g.lessons, of: GOAL.lessons, href: '#/reise' },
   ];
   return (
     <div class={`card goal ${g.done ? 'done' : ''}`}>

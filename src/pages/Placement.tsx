@@ -6,6 +6,7 @@ import { PuzzleBoard, type PuzzleResult } from '../board/PuzzleBoard';
 import { loadPuzzles, type Puzzle } from '../lib/puzzles';
 import { update, addXp, useProgress } from '../lib/store';
 import { Confetti } from '../ui';
+import { getAccount } from '../lib/account';
 
 const START = 500;
 const STEPS = [250, 200, 175, 150, 125, 100, 100, 75, 75, 60, 50, 50];
@@ -35,7 +36,7 @@ function pickNear(all: Puzzle[], target: number, used: string[]) {
 export function Placement({ onStart, onClose }: { onStart: () => void; onClose: () => void }) {
   const s = useProgress();
   const [stage, setStage] = useState<'intro' | 'test' | 'done'>('intro');
-  const [name, setName] = useState(s.name);
+  const name = s.name || getAccount()?.name || '';
   const [all, setAll] = useState<Puzzle[] | null>(null);
   const [i, setI] = useState(0);
   const [target, setTarget] = useState(START);
@@ -69,16 +70,11 @@ export function Placement({ onStart, onClose }: { onStart: () => void; onClose: 
 
   if (stage === 'intro') return (
     <div class="card" style={{ marginTop: '20px' }}>
-      <h1>Velkommen til Rokade!</h1>
-      <p>Her lærer du sjakk med leksjoner, taktikkoppgaver, quiz og boter du kan spille mot. Jo mer du øver, jo flere nivåer, merker og brett låser du opp.</p>
+      <h1>Velkommen{name ? `, ${name}` : ''}!</h1>
+      <p>Her lærer du sjakk med leksjoner, taktikkoppgaver, åpninger, quiz og boter du kan spille mot. Jo mer du øver, jo flere nivåer, merker og brett låser du opp.</p>
       <p>Først en <b>nivåtest</b> med 12 oppgaver. Du får ett forsøk på hver. Klarer du den, blir neste mye vanskeligere. Bommer du, blir neste lettere. Det er helt vanlig å bomme på de siste!</p>
-      <label class="small muted">Hva heter du?</label>
-      <input type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder="Navnet ditt" style={{ margin: '4px 0 12px' }} />
       <button class="btn block" onClick={() => { onStart(); setStage('test'); }}>Start nivåtesten</button>
-      <div class="btnrow" style={{ marginTop: '8px' }}>
-        <a class="btn secondary" href="#/konto">Jeg har bruker</a>
-        <button class="btn secondary" onClick={() => { update((st) => { st.placementDone = true; st.name = name.trim(); }); }}>Hopp over</button>
-      </div>
+      <button class="btn secondary block" style={{ marginTop: '8px' }} onClick={() => { update((st) => { st.placementDone = true; st.name = name.trim(); }); }}>Hopp over</button>
     </div>
   );
   if (stage === 'done') return (

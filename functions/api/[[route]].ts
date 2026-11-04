@@ -108,22 +108,31 @@ export const onRequest = async ({ request, env, params }: Ctx): Promise<Response
       return json({ ok: true });
     }
     if (a === 'me' && method === 'GET') {
-      const p = await env.DB.prepare('SELECT data, updated FROM progress WHERE user_id = ?').bind(me.id).first<{ data: string; updated: number }>();
-      return json({ user: me, progress: p ? JSON.parse(p.data) : null, updated: p?.updated ?? 0 });
+      const p = await env.DB.prepare('SELECT data, updated, rev FROM progress WHERE user_id = ?').bind(me.id).first<{ data: string; updated: number; rev: number }>();
+      return json({ user: me, progress: p ? JSON.parse(p.data) : null, updated: p?.updated ?? 0, rev: p?.rev ?? 0 });
     }
     if (a === 'progress' && method === 'PUT') {
-      const { data } = await body<{ data?: any }>(request);
+      const { data, rev } = await body<{ data?: any; rev?: number }>(request);
       if (!data || typeof data !== 'object') return fail('Mangler data.');
       const raw = JSON.stringify(data);
       if (raw.length > 400000) return fail('For mye data.', 413);
-      await env.DB.prepare('INSERT INTO progress (user_id, data, xp, puzzle_rating, play_rating, updated) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, xp = excluded.xp, puzzle_rating = excluded.puzzle_rating, play_rating = excluded.play_rating, updated = excluded.updated')
-        .bind(me.id, raw, Math.round(+data.xp || 0), Math.round(+data.puzzleRating || 0), Math.round(+data.playRating || 0), now()).run();
-      return json({ ok: true });
+      const xp = Math.round(+data.xp || 0);
+      const sc = data.score ?? {};
+      const total = Math.round(+sc.total || 0), weekPts = Math.round(+sc.weekPts || 0), week = typeof sc.week === 'string' ? sc.week.slice(0, 10) : null;
+      const rush = Math.round(+data.rush?.best || 0);
+      const cur = await env.DB.prepare('SELECT rev, xp, total_pts FROM progress WHERE user_id = ?').bind(me.id).first<{ rev: number; xp: number; total_pts: number }>();
+      // En annen enhet har lagret siden denne enheten sist hentet, og har mer fremgang: ikke overskriv.
+      if (cur && typeof rev === 'number' && cur.rev > rev && (cur.total_pts > total || cur.xp > xp)) return json({ error: 'Nyere fremgang finnes på serveren.', rev: cur.rev }, 409);
+      const next = (cur?.rev ?? 0) + 1;
+      await env.DB.prepare(`INSERT INTO progress (user_id, data, xp, puzzle_rating, play_rating, updated, total_pts, week, week_pts, rush_best, rev) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, xp = excluded.xp, puzzle_rating = excluded.puzzle_rating, play_rating = excluded.play_rating, updated = excluded.updated,
+          total_pts = excluded.total_pts, week = excluded.week, week_pts = excluded.week_pts, rush_best = excluded.rush_best, rev = excluded.rev`)
+        .bind(me.id, raw, xp, Math.round(+data.puzzleRating || 0), Math.round(+data.playRating || 0), now(), total, week, weekPts, rush, next).run();
+      return json({ ok: true, rev: next });
     }
     if (a === 'users' && method === 'GET') {
       const { results } = await env.DB.prepare(`SELECT u.id, u.name, u.created, COALESCE(p.xp,0) AS xp, COALESCE(p.puzzle_rating,0) AS puzzle, COALESCE(p.play_rating,0) AS play, COALESCE(p.updated,0) AS active,
-          json_extract(p.data, '$.score.week') AS week, COALESCE(json_extract(p.data, '$.score.weekPts'), 0) AS weekPts,
-          COALESCE(json_extract(p.data, '$.score.total'), 0) AS total, COALESCE(json_extract(p.data, '$.rush.best'), 0) AS rush,
+          p.week AS week, COALESCE(p.week_pts, 0) AS weekPts, COALESCE(p.total_pts, 0) AS total, COALESCE(p.rush_best, 0) AS rush,
           COALESCE(json_extract(p.data, '$.streak.count'), 0) AS streak, json_extract(p.data, '$.streak.lastDay') AS streakDay,
           (SELECT COUNT(*) FROM games g WHERE (g.white = u.id OR g.black = u.id) AND g.status = 'done') AS games
         FROM users u LEFT JOIN progress p ON p.user_id = u.id ORDER BY xp DESC`).all();

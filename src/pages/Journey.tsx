@@ -2,7 +2,7 @@
 import { ISLANDS, ALL_LESSONS, type Island } from '../data/lessons';
 import { botById, BOTS } from '../engine/bots';
 import { useProgress, type Progress } from '../lib/store';
-import { TopBar, Avatar, IconLock, StarIcon, IconQuiz } from '../ui';
+import { TopBar, Avatar, IconLock, StarIcon, IconQuiz, IconBook } from '../ui';
 
 export function islandUnlocked(s: Progress, idx: number) {
   if (idx === 0) return true;
@@ -33,6 +33,7 @@ export function Journey() {
       <div class="row" style={{ marginBottom: '12px' }}>
         <span class="chip">Leksjoner {done}/{total}</span>
         <span class="chip"><StarIcon /> {starsSum}/{total * 3}</span>
+        <a class="chip" href="#/apninger" style={{ textDecoration: 'none', color: 'inherit' }}><IconBook size={18} /> Åpninger</a>
         <a class="chip" href="#/quiz" style={{ textDecoration: 'none', color: 'inherit' }}><IconQuiz size={18} /> Quiz</a>
       </div>
       <div class="journey-grid">

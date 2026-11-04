@@ -7,6 +7,7 @@ import { engine, scoreOf } from '../engine/stockfish';
 import { destsOf, needsPromotion, checkSquare, playUci, norsk, VALUES } from '../lib/chess';
 import { play } from '../lib/sound';
 import { useProgress, update, addXp, rateGame, checkBadges, getProgress, today, addPoints, goalProgress } from '../lib/store';
+import { nameOpening } from '../data/openings';
 import { TopBar, Avatar, Modal, Confetti, MoveList, IconHint, IconUndo, IconFlip, IconFlag, IconLock, IconSwords, IconGauge } from '../ui';
 import { EvalGauge } from '../board/EvalGauge';
 import { useGamesBadge } from './Friends';
@@ -279,6 +280,7 @@ function Game({ bot, color, resume }: { bot: Bot | null; color: 'w' | 'b'; resum
       <PlayerRow side={top === 'w' ? 'b' : 'w'} />
       </div><div class="play-side">
       <div class="desktop-only label" style={{ marginBottom: '4px' }}>Trekk</div>
+      {(() => { const n = nameOpening(hist); return n ? <div class="small muted" style={{ marginBottom: '4px' }}>Åpning: <b>{n}</b></div> : null; })()}
       <MoveList sans={hist.map(norsk)} />
       <div class="btnrow ctrls" style={{ marginTop: '10px' }}>
         {bot && <button class="btn secondary small" onClick={hint} disabled={!myTurn || hints <= 0}><IconHint size={18} /> Forslag ({hints})</button>}

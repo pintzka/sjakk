@@ -6,7 +6,9 @@ import { writeFileSync } from 'node:fs';
 import { Engine, val } from './engine-node.mjs';
 
 const [games = '50', out = 'puzzles.json', seedArg = '1', mode = 'normal'] = process.argv.slice(2);
-const HARD = mode === 'hard';
+const HARD = mode === 'hard' || mode === 'hard2';
+// hard2: bare oppgaver som krever mer enn ett enkelt slag/sjakk (flere trekk, stille trekk eller matt i 2+)
+const HARD2 = mode === 'hard2';
 let seed = +seedArg * 9973;
 const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 const pick = (a) => a[Math.floor(rnd() * a.length)];
@@ -129,7 +131,7 @@ for (let g = 0; g < +games; g++) {
       // Vanskelig modus: en «nesten god» feil (taper 120–600 cp) i stedet for et tilfeldig trekk
       const a = await e.analyse(ch.fen(), 10, 6);
       const best = val(a[0]);
-      const cands = a.slice(1).filter((x) => best - val(x) >= 120 && best - val(x) <= 600);
+      const cands = a.slice(1).filter((x) => best - val(x) >= (HARD2 ? 150 : 120) && best - val(x) <= (HARD2 ? 450 : 600));
       mv = cands.length ? pick(cands).move : await chooseMove(ch, ply);
     } else if (blunder) mv = uci(pick(ch.moves({ verbose: true })));
     else mv = await chooseMove(ch, ply);
@@ -160,6 +162,12 @@ for (let g = 0; g < +games; g++) {
       mateN = Math.ceil(line.length / 2);
     }
     const { themes, firstCapture, firstCheck } = themesFor(ch.fen(), line, mateN);
+    if (HARD2) {
+      const solverMoves = Math.ceil(line.length / 2);
+      const quiet = !firstCapture && !firstCheck;
+      if (themes.includes('henger') || themes.includes('mattI1')) continue;
+      if (solverMoves < 2 && !quiet) continue;
+    }
     puzzles.push({
       id: `p${seedArg}-${puzzles.length}`,
       fen: fenBefore,

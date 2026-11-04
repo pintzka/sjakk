@@ -21,6 +21,7 @@ export const IconFlag = I(<><path d="M5 21V4" /><path d="M5 4h12l-2 4 2 4H5" /><
 export const IconTrophy = I(<><path d="M8 21h8M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" /><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" /></>);
 export const IconTimer = I(<><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2.5M9 2h6" /></>);
 export const IconGauge = I(<><path d="M3 15a9 9 0 0 1 18 0" /><path d="M12 15l4-5" /><path d="M3 19h18" /></>);
+export const IconBook = I(<><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 21V5M8 7h7" /></>);
 export const IconQuiz = I(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 1-1 1.7v.5" /><path d="M12 17h.01" /></>);
 
 export function Flame({ size = 18, on = true }: { size?: number; on?: boolean }) {
@@ -40,6 +41,23 @@ export function Avatar({ piece, color, size = 44 }: { piece: PieceType; color: s
       <PieceSvg type={piece} color="w" />
     </div>
   );
+}
+
+// Rokade-logoen: tårnet som hopper over kongen (rokade), egen tegning.
+export function LogoMark({ size = 32 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true" class="logo-mark">
+      <rect width="100" height="100" rx="22" fill="#1f5c46" />
+      <path d="M20 40C29 13 64 9 75.5 25.5" fill="none" stroke="#e2ab3f" stroke-width="7" stroke-linecap="round" />
+      <path d="M84 36.5L67.5 29.5 82 19z" fill="#e2ab3f" stroke="#e2ab3f" stroke-width="2" stroke-linejoin="round" />
+      <g transform="translate(18 28.5) scale(.64)" fill="#fbf8f1" stroke="#16130f" stroke-width="3.4" stroke-linejoin="round">
+        <path d="M19 87h62v-5c0-3.5-2.2-6-5.5-6h-51c-3.3 0-5.5 2.5-5.5 6z" /><path d="M26 76h48v-6H26z" /><path d="M32 70l2.5-33h31L68 70z" /><path d="M28 37h44v-6H28z" /><path d="M28 31V16h9v6.5h7V16h12v6.5h7V16h9v15z" />
+      </g>
+    </svg>
+  );
+}
+export function Logo({ size = 30 }: { size?: number }) {
+  return <span class="logo"><LogoMark size={size} /><span class="logo-word">Rokade</span></span>;
 }
 
 export function Modal({ children, onClose }: { children: ComponentChildren; onClose?: () => void }) {
@@ -86,7 +104,7 @@ export function TopBar({ title, back }: { title?: string; back?: string }) {
   return (
     <div class="topbar">
       {back && <a href={back} class="btn secondary small" aria-label="Tilbake"><IconBack size={18} /></a>}
-      <div class={`title ${title ? '' : 'brand'}`}>{title ?? 'Rokade'}</div>
+      <div class={`title ${title ? '' : 'brand'}`}>{title ?? <Logo />}</div>
       <span class="chip" title="Dager på rad"><Flame on={s.streak.lastDay === today()} /> {s.streak.count}</span>
       <span class="chip" title={`${s.xp - cur} / ${next - cur} XP til neste nivå`}><StarIcon /> {lvl}</span>
     </div>
