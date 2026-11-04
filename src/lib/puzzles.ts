@@ -62,7 +62,7 @@ export function recordPuzzle(p: Puzzle, clean: boolean) {
   });
 }
 
-function addDays(n: number) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+function addDays(n: number) { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE'); }
 
 // Dagens oppgave: samme oppgave hele dagen, tilpasset ratingen
 export function dailyPuzzle(all: Puzzle[]): Puzzle {

@@ -6,7 +6,7 @@ import { PieceSvg } from '../board/pieces';
 import { api, useAccount } from '../lib/account';
 import { destsOf, needsPromotion, checkSquare, playUci, norsk } from '../lib/chess';
 import { play } from '../lib/sound';
-import { levelFromXp, addXp, update } from '../lib/store';
+import { levelFromXp, addXp, update, addPoints, goalProgress } from '../lib/store';
 import { TopBar, Modal, Confetti, MoveList, IconFlip, IconFlag } from '../ui';
 
 interface User { id: number; name: string; xp: number; puzzle: number; play: number; active: number; created: number; games: number }
@@ -174,9 +174,9 @@ export function FriendGame({ id }: { id: string }) {
   function onFinished(game: Game, meId: number) {
     const won = (game.result === '1-0' && game.white === meId) || (game.result === '0-1' && game.black === meId);
     const draw = game.result === '½-½';
-    addXp(won ? 60 : draw ? 30 : 15);
+    addXp(won ? 60 : draw ? 30 : 15); addPoints(won ? 30 : draw ? 15 : 0); goalProgress('games');
     if (won) { setCelebrate(true); play('win'); } else play(draw ? 'good' : 'lose');
-    update((s) => { s.games = [{ bot: 'venn', result: (won ? 'win' : draw ? 'draw' : 'loss') as 'win' | 'draw' | 'loss', color: (game.white === meId ? 'w' : 'b') as 'w' | 'b', date: new Date().toISOString().slice(0, 10), pgn: '', moves: game.moves.split(' ').length }, ...s.games].slice(0, 30); });
+    update((s) => { s.games = [{ bot: 'venn', result: (won ? 'win' : draw ? 'draw' : 'loss') as 'win' | 'draw' | 'loss', color: (game.white === meId ? 'w' : 'b') as 'w' | 'b', date: new Date().toLocaleDateString('sv-SE'), pgn: '', moves: game.moves.split(' ').length }, ...s.games].slice(0, 30); });
   }
 
   useEffect(() => { if (acc) { load(); const t = setInterval(load, 2500); return () => clearInterval(t); } }, [acc?.token, id]);

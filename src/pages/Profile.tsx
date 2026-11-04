@@ -75,7 +75,7 @@ export function Profile() {
           <button class="btn secondary small" onClick={() => setConfirm(true)}>Start helt på nytt</button>
         </div>
       </div>
-      <p class="small muted center">Sjakkreisen er åpen kildekode (GPL-3). Sjakkmotoren er <a href="https://stockfishchess.org" target="_blank" rel="noopener">Stockfish</a> (GPL-3). Brikker, figurer, lyder og oppgaver er laget for denne siden.</p>
+      <p class="small muted center">Rokade er åpen kildekode (GPL-3). Sjakkmotoren er <a href="https://stockfishchess.org" target="_blank" rel="noopener">Stockfish</a> (GPL-3). Brikker, figurer, lyder og oppgaver er laget for denne siden.</p>
       {confirm && (
         <Modal onClose={() => setConfirm(false)}>
           <h2>Starte på nytt?</h2><p class="muted">All fremgang på denne enheten blir slettet.</p>

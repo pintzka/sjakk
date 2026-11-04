@@ -60,7 +60,7 @@ export function Placement({ onStart, onClose }: { onStart: () => void; onClose: 
     if (i + 1 >= STEPS.length) {
       const est = estimate(answers);
       const play = Math.max(250, est - 75);
-      update((st) => { st.puzzleRating = est; st.playRating = play; st.placementDone = true; st.name = name.trim(); st.ratingHistory.push({ d: new Date().toISOString().slice(0, 10), puzzle: est, play }); });
+      update((st) => { st.puzzleRating = est; st.playRating = play; st.placementDone = true; st.name = name.trim(); st.ratingHistory.push({ d: new Date().toLocaleDateString('sv-SE'), puzzle: est, play }); });
       addXp(60);
       setRating(est);
       setStage('done');
@@ -69,7 +69,7 @@ export function Placement({ onStart, onClose }: { onStart: () => void; onClose: 
 
   if (stage === 'intro') return (
     <div class="card" style={{ marginTop: '20px' }}>
-      <h1>Velkommen til Sjakkreisen!</h1>
+      <h1>Velkommen til Rokade!</h1>
       <p>Her lærer du sjakk med leksjoner, taktikkoppgaver, quiz og boter du kan spille mot. Jo mer du øver, jo flere nivåer, merker og brett låser du opp.</p>
       <p>Først en <b>nivåtest</b> med 12 oppgaver. Du får ett forsøk på hver. Klarer du den, blir neste mye vanskeligere. Bommer du, blir neste lettere. Det er helt vanlig å bomme på de siste!</p>
       <label class="small muted">Hva heter du?</label>

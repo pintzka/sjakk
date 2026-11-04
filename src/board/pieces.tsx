@@ -9,7 +9,7 @@ const BASE_W = 'M19 87h62v-5c0-3.5-2.2-6-5.5-6h-51c-3.3 0-5.5 2.5-5.5 6z';
 const FOOT = 'M31 76c2-6 6-9.5 10-10.5h18c4 1 8 4.5 10 10.5z';
 const COLLAR = (y: number, w = 28) => `M${50 - w / 2} ${y + 6}h${w}a3 3 0 0 0 0-6h-${w}a3 3 0 0 0 0 6z`;
 
-// Klassiske silhuetter (Staunton-inspirert), tegnet for Sjakkreisen.
+// Klassiske silhuetter (Staunton-inspirert), tegnet for Rokade.
 const SHAPES: Record<PieceType, (detail: string) => JSX.Element> = {
   p: () => (
     <>

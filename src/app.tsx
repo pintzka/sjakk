@@ -10,7 +10,9 @@ import { QuizList, Quiz } from './pages/Quiz';
 import { Profile } from './pages/Profile';
 import { Account } from './pages/Account';
 import { Placement } from './pages/Placement';
-import { Toasts, IconHome, IconMap, IconBolt, IconSwords, IconUser } from './ui';
+import { Leaderboard } from './pages/Leaderboard';
+import { Rush } from './pages/Rush';
+import { Toasts, IconHome, IconMap, IconBolt, IconSwords, IconUser, IconTrophy } from './ui';
 
 function useHash() {
   const [h, setH] = useState(location.hash);
@@ -35,13 +37,15 @@ export function App() {
   else switch (page) {
     case 'reise': view = <Journey />; break;
     case 'leksjon': view = <Lesson key={arg} id={arg} />; break;
-    case 'oppgaver': view = <Puzzles />; break;
+    case 'oppgaver': view = <Puzzles key={arg || 'alle'} start={arg || undefined} />; break;
+    case 'lyn': view = <Rush />; break;
     case 'dagens': view = <Puzzles key="daily" daily />; break;
     case 'spill': view = <Play key={arg || 'list'} botId={arg || undefined} />; break;
     case 'venner': view = <Friends />; break;
     case 'venn': view = <FriendGame key={arg} id={arg} />; break;
     case 'quiz': view = arg ? <Quiz key={arg} id={arg} /> : <QuizList />; break;
     case 'meg': view = <Profile />; break;
+    case 'tabell': view = <Leaderboard />; break;
     case 'konto': view = <Account />; break;
     default: view = <Home />;
   }
@@ -49,8 +53,9 @@ export function App() {
   const nav = [
     { href: '#/', icon: <IconHome />, label: 'Hjem', on: page === '' },
     { href: '#/reise', icon: <IconMap />, label: 'Reise', on: ['reise', 'leksjon', 'quiz'].includes(page) },
-    { href: '#/oppgaver', icon: <IconBolt />, label: 'Oppgaver', on: page === 'oppgaver' || page === 'dagens' },
+    { href: '#/oppgaver', icon: <IconBolt />, label: 'Oppgaver', on: page === 'oppgaver' || page === 'dagens' || page === 'lyn' },
     { href: '#/spill', icon: <IconSwords />, label: 'Spill', on: ['spill', 'venner', 'venn'].includes(page), badge: turns },
+    { href: '#/tabell', icon: <IconTrophy />, label: 'Tabell', on: page === 'tabell' },
     { href: '#/meg', icon: <IconUser />, label: 'Meg', on: page === 'meg' || page === 'konto' },
   ];
   return (
@@ -59,7 +64,7 @@ export function App() {
       <div class={`app ${hideNav ? 'nonav' : ''}`}>{view}</div>
       {!hideNav && (
         <nav class="nav"><div class="nav-inner">
-          <a href="#/" class="nav-brand">Sjakkreisen</a>
+          <a href="#/" class="nav-brand">Rokade</a>
           {nav.map((n) => (
             <a key={n.href} href={n.href} class={n.on ? 'active' : ''} style={{ position: 'relative' }}>
               {n.icon}{n.label}

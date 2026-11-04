@@ -1,4 +1,4 @@
-// Sjakkreisen: øyer med leksjoner og en boss på hver øy.
+// Reisen: øyer med leksjoner og en boss på hver øy.
 import { ISLANDS, ALL_LESSONS, type Island } from '../data/lessons';
 import { botById, BOTS } from '../engine/bots';
 import { useProgress, type Progress } from '../lib/store';
@@ -29,7 +29,7 @@ export function Journey() {
   const kare = BOTS[BOTS.length - 1];
   return (
     <div>
-      <TopBar title="Sjakkreisen" />
+      <TopBar title="Reisen" />
       <div class="row" style={{ marginBottom: '12px' }}>
         <span class="chip">Leksjoner {done}/{total}</span>
         <span class="chip"><StarIcon /> {starsSum}/{total * 3}</span>

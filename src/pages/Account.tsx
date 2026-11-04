@@ -26,7 +26,7 @@ export function Account() {
       <TopBar title="Konto" back="#/meg" />
       <div class="card">
         <h2>Logget inn som {acc.name}</h2>
-        <p class="muted">Fremgangen din lagres automatisk, så du kan bruke Sjakkreisen på mobil, nettbrett og PC.</p>
+        <p class="muted">Fremgangen din lagres automatisk, så du kan bruke Rokade på mobil, nettbrett og PC.</p>
         <button class="btn secondary block" onClick={async () => { await logout(); location.hash = '#/'; }}>Logg ut</button>
       </div>
     </div>

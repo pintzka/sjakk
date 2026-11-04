@@ -9,7 +9,7 @@ import { destsOf, needsPromotion, checkSquare, playUci } from '../lib/chess';
 import { loadPuzzles, pickPuzzle, recordPuzzle, type Puzzle } from '../lib/puzzles';
 import { engine } from '../engine/stockfish';
 import { play } from '../lib/sound';
-import { update, addXp, useProgress, today, checkBadges, ratePuzzle } from '../lib/store';
+import { update, addXp, useProgress, today, checkBadges, ratePuzzle, addPoints, goalProgress } from '../lib/store';
 import { Confetti, StarIcon } from '../ui';
 
 type Done = (mistakes: number) => void;
@@ -20,7 +20,7 @@ export function Lesson({ id }: { id: string }) {
   const [i, setI] = useState(0);
   const [stepDone, setStepDone] = useState(false);
   const mistakes = useRef(0);
-  const [finished, setFinished] = useState<{ stars: number; xp: number } | null>(null);
+  const [finished, setFinished] = useState<{ stars: number; xp: number; pts: number } | null>(null);
   if (!lesson) return <div class="card">Fant ikke leksjonen. <a href="#/reise">Tilbake</a></div>;
   const step = lesson.steps[i];
   const island = ISLANDS.find((x) => x.id === lesson.island)!;
@@ -32,8 +32,10 @@ export function Lesson({ id }: { id: string }) {
     const prev = s.lessons[lesson!.id]?.stars ?? 0;
     const xp = prev ? (stars > prev ? 10 : 5) : 20 + stars * 5;
     update((st) => { st.lessons[lesson!.id] = { stars: Math.max(prev, stars), date: today() }; });
-    addXp(xp); checkBadges(); play('win');
-    setFinished({ stars, xp });
+    // Poeng: 5 per stjerne første gang, bare forbedringen senere (2 for å gjenta)
+    const pts = prev ? (stars > prev ? (stars - prev) * 5 : 2) : stars * 5;
+    addXp(xp); addPoints(pts); goalProgress('lessons'); checkBadges(); play('win');
+    setFinished({ stars, xp, pts });
   }
 
   if (finished) {
@@ -44,7 +46,7 @@ export function Lesson({ id }: { id: string }) {
         <Confetti />
         <h1>Leksjon fullført!</h1>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', margin: '10px 0' }}>{[1, 2, 3].map((k) => <span key={k} style={{ opacity: k <= finished.stars ? 1 : 0.25 }}><StarIcon size={44} /></span>)}</div>
-        <p><b>+{finished.xp} XP</b></p>
+        <p><b>+{finished.xp} XP · +{finished.pts} poeng</b></p>
         {finished.stars < 3 && <p class="small muted">Gjør leksjonen uten feil for å få tre stjerner.</p>}
         <div class="stack">
           {nextL ? <a class="btn block" href={`#/leksjon/${nextL.id}`}>Neste: {nextL.title}</a> : <a class="btn gold block" href="#/reise">Ta bossen på {island.name}!</a>}

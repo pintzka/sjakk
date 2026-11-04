@@ -1,4 +1,4 @@
-/* Sjakkreisen – «papir og blekk». Rolige farger, serif-overskrifter, tynne linjer. */
+/* Rokade – «papir og blekk». Rolige farger, serif-overskrifter, tynne linjer. */
 :root {
   --bg: #f2ede3; --surface: #fbf9f4; --surface2: #ebe4d6; --line: #d8cebc; --line-strong: #1f1d1a;
   --text: #1f1d1a; --muted: #6f675b; --accent: #1f5c46; --accent-text: #fbf9f4; --accent-soft: #dfe9e2;
@@ -209,22 +209,22 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 
 @media (max-width: 420px) { .btn .btn-text { display: none; } }
 @media (min-width: 960px) {
   .desktop-only { display: block; }
-  .nav { top: 0; right: auto; bottom: 0; width: 210px; border-top: none; border-right: 1px solid var(--line-strong); justify-content: flex-start; flex-direction: column; padding: 18px 0; }
-  .nav-inner { flex-direction: column; max-width: none; gap: 2px; }
-  .nav a { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 10px 22px; font-size: .95rem; border-top: none; border-left: 3px solid transparent; margin: 0; }
-  .nav a.active { border-left-color: var(--accent); background: var(--surface2); }
-  .nav a.nav-brand { display: block !important; font-family: var(--font-head); font-style: italic; font-weight: 700; font-size: 1.45rem; color: var(--text); padding: 0 22px 18px; margin-bottom: 8px; border-bottom: 1px solid var(--line); border-left: none; background: none; }
-  .app { max-width: 1240px; padding: 24px 36px 40px; margin-left: 210px; }
-  .app.nonav { margin-left: auto; }
-  @media (min-width: 1500px) { .app { margin-left: max(210px, calc((100vw - 1240px) / 2)); } }
+  .nav { top: 0; bottom: auto; border-top: none; border-bottom: 1px solid var(--line-strong); padding: 0; }
+  .nav-inner { max-width: 1240px; padding: 0 36px; align-items: stretch; gap: 4px; }
+  .nav a { flex: none; flex-direction: row; gap: 8px; padding: 14px 14px 12px; font-size: .92rem; border-top: none; border-bottom: 3px solid transparent; margin: 0 0 -1px; }
+  .nav a.active { border-bottom-color: var(--accent); }
+  .nav svg { width: 20px; height: 20px; }
+  .nav a.nav-brand { display: flex !important; align-items: center; font-family: var(--font-head); font-style: italic; font-weight: 700; font-size: 1.45rem; color: var(--text); padding: 0 24px 0 0; margin-right: auto; border: none; }
+  .app { max-width: 1240px; padding: 84px 36px 40px; }
+  .app.nonav { padding-top: 24px; }
   .topbar .title { font-size: 1.6rem; }
   .play-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
-  .play-board .board-wrap { max-width: min(720px, calc(100vh - 300px)); }
+  .play-board .board-wrap { max-width: min(720px, calc(100vh - 340px)); }
   .play-side .btnrow .btn { white-space: nowrap; }
-  .play-side { position: sticky; top: 20px; }
+  .play-side { position: sticky; top: 72px; }
   .play-side > .status:first-child { margin-top: 0; }
   .play-side .movelist { max-height: 40vh; display: grid; grid-template-columns: 2.4em 1fr 1fr; gap: 3px 8px; font-size: .95rem; color: var(--text); border-top: 1px solid var(--line); padding-top: 8px; }
-  .board-wrap { max-width: min(640px, calc(100vh - 200px)); }
+  .board-wrap { max-width: min(640px, calc(100vh - 240px)); }
   .grid2 { grid-template-columns: repeat(4, 1fr); }
   .home-cols .grid2 { grid-template-columns: 1fr 1fr; }
   .home-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -246,3 +246,41 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 
 .chat-form { display: flex; gap: 6px; }
 .chat-form input { flex: 1; min-width: 0; }
 @media (min-width: 960px) { .chat-box { max-height: 300px; } }
+
+/* Tabell */
+.table-card { padding: 4px 12px; }
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.lb-row:last-child { border-bottom: none; }
+.lb-row.me { background: var(--surface2); margin: 0 -12px; padding: 10px 12px; }
+.lb-rank { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; border: 1px solid var(--line); border-radius: 4px; font-size: .85rem; flex-shrink: 0; }
+.lb-rank.top { background: var(--gold); border-color: var(--gold); color: #fff; }
+.lb-val { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lb-val b { font-size: 1.15rem; }
+.pts-grid { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+.stats4 .card { padding: 10px 6px; margin-bottom: 10px; }
+.stats4 .label { font-size: .62rem; }
+.desktop-inline { display: none; }
+@media (min-width: 960px) { .desktop-inline { display: block; } }
+
+.rush-time { font-variant-numeric: tabular-nums; }
+.rush-time.low { color: var(--bad); border-color: var(--bad); }
+
+/* Dagens mål */
+.goal-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; color: inherit; text-decoration: none; flex-wrap: wrap; }
+.goal-check { width: 20px; height: 20px; border: 1.5px solid var(--line-strong); border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; flex-shrink: 0; }
+.goal-item.ok .goal-check { background: var(--good); border-color: var(--good); color: #fff; }
+.goal-item.ok .grow { color: var(--muted); text-decoration: line-through; }
+.goal-bar { flex-basis: 100%; height: 3px; background: var(--line); margin-left: 30px; }
+.goal-bar i { display: block; height: 100%; background: var(--accent); }
+.goal.done { border-left: 4px solid var(--good); }
+
+/* Små tall under XP-baren på forsiden */
+.mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; text-align: center; }
+.mini-stats > * { color: inherit; text-decoration: none; }
+.mini-num { font-family: var(--font-head); font-weight: 700; line-height: 1.2; display: flex; font-size: 1.15rem; justify-content: center; }
+.mini-stats .label { font-size: .6rem; }
+@media (min-width: 960px) {
+  .topbar .title.brand { visibility: hidden; }
+  .play-side .btnrow.ctrls { display: grid; grid-template-columns: 1fr 1fr; }
+  .pts-grid { max-width: 560px; }
+}

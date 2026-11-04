@@ -1,4 +1,4 @@
-# Sjakkreisen (sjakk.pintzka.com)
+# Rokade (sjakk.pintzka.com)
 
 Daniel (13) eier prosjektet. Svar på norsk, forklar på et nivå som passer en 13-åring.
 Bare egne figurer, brikker, lyder og oppgaver. Ikke bruk innhold andre har rettighetene til.

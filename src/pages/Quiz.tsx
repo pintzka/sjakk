@@ -7,7 +7,7 @@ import { loadPuzzles, type Puzzle } from '../lib/puzzles';
 import { playUci } from '../lib/chess';
 import { starMoves } from '../lib/stars';
 import { play } from '../lib/sound';
-import { update, addXp, useProgress, checkBadges } from '../lib/store';
+import { update, addXp, useProgress, checkBadges, addPoints, goalProgress } from '../lib/store';
 import { TopBar, shuffle, Confetti } from '../ui';
 
 export const QUIZZES = [
@@ -34,7 +34,7 @@ export function QuizList() {
 function finishQuiz(id: string, score: number) {
   let record = false;
   update((s) => { if (score > (s.quizBest[id] ?? -1)) { s.quizBest[id] = score; record = true; } });
-  addXp(Math.max(5, score * 2)); checkBadges();
+  addXp(Math.max(5, score * 2)); addPoints(Math.max(1, Math.round(score / 2))); goalProgress('lessons'); checkBadges();
   return record;
 }
 
@@ -46,7 +46,7 @@ function Result({ id, score, max, onAgain }: { id: string; score: number; max?: 
       {record && <Confetti />}
       <h1>{score}{max ? ` av ${max}` : ' poeng'}</h1>
       {record && <p><b style={{ color: 'var(--gold)' }}>Ny rekord!</b></p>}
-      <p class="muted">+{Math.max(5, score * 2)} XP</p>
+      <p class="muted">+{Math.max(5, score * 2)} XP · +{Math.max(1, Math.round(score / 2))} poeng</p>
       <div class="btnrow"><button class="btn" onClick={onAgain}>Prøv igjen</button><a class="btn secondary" href="#/quiz">Andre quizer</a></div>
     </div>
   );

@@ -6,7 +6,7 @@ import { BOTS, botById, botMove, say, type Bot } from '../engine/bots';
 import { engine, scoreOf } from '../engine/stockfish';
 import { destsOf, needsPromotion, checkSquare, playUci, norsk, VALUES } from '../lib/chess';
 import { play } from '../lib/sound';
-import { useProgress, update, addXp, rateGame, checkBadges, getProgress, today } from '../lib/store';
+import { useProgress, update, addXp, rateGame, checkBadges, getProgress, today, addPoints, goalProgress } from '../lib/store';
 import { TopBar, Avatar, Modal, Confetti, MoveList, IconHint, IconUndo, IconFlip, IconFlag, IconLock, IconSwords, IconGauge } from '../ui';
 import { EvalGauge } from '../board/EvalGauge';
 import { useGamesBadge } from './Friends';
@@ -26,8 +26,8 @@ export function Play({ botId }: { botId?: string }) {
   const acc = useAccount();
   const turns = useGamesBadge();
   if (botId) {
-    const [id, color] = botId.split('-');
-    return <Game key={botId} bot={id === 'venn' ? null : botById(id)} color={color === 'b' ? 'b' : 'w'} />;
+    const [id, color, x] = botId.split('-');
+    return <Game key={botId} bot={id === 'venn' ? null : botById(id)} color={color === 'b' ? 'b' : 'w'} resume={x === 'fortsett'} />;
   }
   const start = (id: string, c: 'w' | 'b' | 'r') => {
     const col = c === 'r' ? (Math.random() < 0.5 ? 'w' : 'b') : c;
@@ -37,10 +37,15 @@ export function Play({ botId }: { botId?: string }) {
     <div>
       <TopBar title="Spill" />
       <div class="row" style={{ marginBottom: '10px' }}><span class="chip">Spillrating: {Math.round(s.playRating)}</span></div>
+      {s.savedGame && BOTS.some((b) => b.id === s.savedGame!.bot) && (() => { const sg = s.savedGame!; const b = botById(sg.bot); return (
+        <a href={`#/spill/${sg.bot}-${sg.color}-fortsett`} class="card click goldline" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+          <div class="row"><Avatar piece={b.piece} color={b.color} size={52} /><div class="grow"><b>Fortsett partiet mot {b.name}</b><div class="small muted">Du spiller {sg.color === 'w' ? 'hvit' : 'svart'} · {sg.pgn.split(/\d+\./).length - 1} trekk spilt</div></div><span class="btn small">Fortsett</span></div>
+        </a>
+      ); })()}
       <a href="#/venner" class="card click goodline" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
         <div class="row">
           <div class="avatar" style={{ background: '#1f5c46', width: '52px', height: '52px', color: '#fbf9f4' }}><IconSwords size={28} /></div>
-          <div class="grow"><b>Spill mot venner</b><div class="small muted">{acc ? 'Mot andre på Sjakkreisen. Trekkene lagres, og dere har 24 timer på hvert trekk.' : 'Logg inn for å utfordre andre på Sjakkreisen'}</div></div>
+          <div class="grow"><b>Spill mot venner</b><div class="small muted">{acc ? 'Mot andre på Rokade. Trekkene lagres, og dere har 24 timer på hvert trekk.' : 'Logg inn for å utfordre andre på Rokade'}</div></div>
           {turns > 0 && <span class="chip" style={{ borderColor: 'var(--good)', color: 'var(--good)' }}>{turns === 1 ? 'Din tur' : `${turns} venter`}</span>}
         </div>
       </a>
@@ -90,20 +95,23 @@ export function Play({ botId }: { botId?: string }) {
   );
 }
 
-type EndInfo = { result: 'win' | 'loss' | 'draw'; reason: string; delta?: number; xp?: number; hints?: number; penalty?: number };
+type EndInfo = { result: 'win' | 'loss' | 'draw'; reason: string; delta?: number; xp?: number; hints?: number; penalty?: number; pts?: number };
 
 const HINT_XP = 10; // hvert trekkforslag koster 10 XP, og seier gir halv ratinggevinst
 
-function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
-  const ch = useRef(new Chess());
+function Game({ bot, color, resume }: { bot: Bot | null; color: 'w' | 'b'; resume?: boolean }) {
+  // Fortsett et lagret parti (appen ble lukket midt i partiet)
+  const saved = resume && bot ? getProgress().savedGame : null;
+  const restore = saved && saved.bot === bot!.id && saved.color === color ? saved : null;
+  const ch = useRef((() => { const c = new Chess(); if (restore) { try { c.loadPgn(restore.pgn); } catch { /* */ } } return c; })());
   const [fen, setFen] = useState(ch.current.fen());
   const [orientation, setOrientation] = useState<'w' | 'b'>(color);
-  const [last, setLast] = useState<[string, string] | null>(null);
+  const [last, setLast] = useState<[string, string] | null>(() => { const h = ch.current.history({ verbose: true }); const l = h[h.length - 1]; return l ? [l.from, l.to] : null; });
   const [thinking, setThinking] = useState(false);
   const [bubble, setBubble] = useState(bot ? say(bot.lines.start) : '');
   const [arrows, setArrows] = useState<Arrow[]>([]);
-  const [hints, setHints] = useState(3);
-  const hintsUsed = useRef(0);
+  const [hints, setHints] = useState(restore?.hints ?? 3);
+  const hintsUsed = useRef(restore?.hintsUsed ?? 0);
   const settings = useProgress().settings;
   const showEval = settings.evalBar !== false;
   const [end, setEnd] = useState<EndInfo | null>(null);
@@ -116,12 +124,20 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
 
   useEffect(() => { if (bot && ch.current.turn() !== color) botTurn(); }, []);
 
+  // Lagre partiet etter hvert trekk, så det kan fortsettes senere
+  function saveGame() {
+    if (!bot) return;
+    const pgn = ch.current.pgn();
+    update((s) => { s.savedGame = ch.current.history().length ? { bot: bot.id, color, pgn, hints, hintsUsed: hintsUsed.current } : null; });
+  }
+
   function afterMove(m: Move, byBot: boolean) {
     setLast([m.from, m.to]); setArrows([]); setSuggest('');
     play(ch.current.inCheck() ? 'check' : m.captured ? 'capture' : 'move');
     if (bot && m.captured && Math.random() < 0.45) setBubble(say(byBot ? bot.lines.capture : bot.lines.lost));
     refresh();
     if (ch.current.isGameOver()) { finish(); return true; }
+    saveGame();
     return false;
   }
 
@@ -166,6 +182,7 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
       reason = c.isStalemate() ? 'Patt: den som er i trekket har ingen lovlige trekk, men står ikke i sjakk.' : c.isThreefoldRepetition() ? 'Remis ved tre like stillinger.' : c.isInsufficientMaterial() ? 'Remis: ingen av dere har nok brikker til å sette matt.' : 'Remis (50-trekksregelen).';
     }
     const info: EndInfo = { result, reason };
+    update((s) => { s.savedGame = null; });
     if (bot) {
       const score = result === 'win' ? 1 : result === 'draw' ? 0.5 : 0;
       const used = hintsUsed.current;
@@ -174,6 +191,8 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
       info.hints = used;
       info.penalty = Math.min(fullXp - 5, used * HINT_XP);
       info.xp = fullXp - info.penalty;
+      // Poeng: seier = botens rating / 25, remis halvparten; trekkforslag halverer
+      info.pts = Math.round((result === 'win' ? bot.elo / 25 : result === 'draw' ? bot.elo / 50 : 0) * (used ? 0.5 : 1));
       update((s) => {
         const r = s.bots[bot.id] ?? { w: 0, l: 0, d: 0 };
         if (result === 'win') r.w++; else if (result === 'loss') r.l++; else r.d++;
@@ -181,7 +200,7 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
         s.games = [{ bot: bot.id, result, color, date: today(), pgn: c.pgn(), moves: c.history().length }, ...s.games].slice(0, 30);
         if (result === 'win' && c.isCheckmate()) s.stats.mates += 1;
       });
-      addXp(info.xp); checkBadges();
+      addXp(info.xp); addPoints(info.pts); goalProgress('games'); checkBadges();
       setBubble(say(result === 'win' ? bot.lines.lose : result === 'loss' ? bot.lines.win : ['Remis! Godt kjempet.']));
       play(result === 'win' ? 'win' : result === 'loss' ? 'lose' : 'good');
     } else play('win');
@@ -211,7 +230,7 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
     if (bot) { if (c.turn() !== color) return; c.undo(); c.undo(); }
     else c.undo();
     const h = c.history({ verbose: true }); const lm = h[h.length - 1];
-    setLast(lm ? [lm.from, lm.to] : null); setArrows([]); refresh();
+    setLast(lm ? [lm.from, lm.to] : null); setArrows([]); refresh(); saveGame();
     if (!bot) setOrientation(c.turn());
   }
 
@@ -261,12 +280,12 @@ function Game({ bot, color }: { bot: Bot | null; color: 'w' | 'b' }) {
       </div><div class="play-side">
       <div class="desktop-only label" style={{ marginBottom: '4px' }}>Trekk</div>
       <MoveList sans={hist.map(norsk)} />
-      <div class="btnrow" style={{ marginTop: '10px' }}>
+      <div class="btnrow ctrls" style={{ marginTop: '10px' }}>
         {bot && <button class="btn secondary small" onClick={hint} disabled={!myTurn || hints <= 0}><IconHint size={18} /> Forslag ({hints})</button>}
-        <button class={`btn small ${showEval ? '' : 'secondary'}`} onClick={toggleEval} aria-label="Stillingsmåler av/på" title="Stillingsmåler av/på"><IconGauge size={18} /></button>
+        <button class={`btn small ${showEval ? '' : 'secondary'}`} onClick={toggleEval} aria-label="Stillingsmåler av/på" title="Stillingsmåler av/på"><IconGauge size={18} /><span class="btn-text"> Måler</span></button>
         {(!bot || bot.undo) && <button class="btn secondary small" onClick={undo} disabled={!myTurn || hist.length < (bot ? 2 : 1)}><IconUndo size={18} /><span class="btn-text"> Angre</span></button>}
-        <button class="btn secondary small" onClick={() => setOrientation(orientation === 'w' ? 'b' : 'w')}><IconFlip size={18} /></button>
-        {bot && !end && <button class="btn secondary small" onClick={() => setConfirmResign(true)}><IconFlag size={18} /></button>}
+        <button class="btn secondary small" onClick={() => setOrientation(orientation === 'w' ? 'b' : 'w')} aria-label="Snu brettet"><IconFlip size={18} /><span class="btn-text"> Snu</span></button>
+        {bot && !end && <button class="btn secondary small" onClick={() => setConfirmResign(true)} aria-label="Gi opp"><IconFlag size={18} /><span class="btn-text"> Gi opp</span></button>}
       </div>
       {suggest && !end && <div class="status good">{suggest}</div>}
       {end && !review && <div class="status info">{end.reason} <button class="btn small" style={{ marginLeft: '8px' }} onClick={() => setReview(true)}>Se gjennom</button></div>}
@@ -295,8 +314,8 @@ function EndModal({ end, bot, onReview }: { end: EndInfo; bot: Bot | null; onRev
           {bot && <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar piece={bot.piece} color={bot.color} size={64} /></div>}
           <h1 style={{ marginTop: '8px' }}>{title}</h1>
           <p class="muted">{end.reason}</p>
-          {bot && <p><b>+{end.xp} XP</b> · Spillrating {end.delta! >= 0 ? '+' : ''}{end.delta}</p>}
-          {bot && !!end.hints && <p class="small muted">Du brukte {end.hints} trekkforslag: −{end.penalty} XP{end.result !== 'loss' ? ' og halv ratinggevinst' : ''}.</p>}
+          {bot && <p><b>+{end.xp} XP</b> · <b>+{end.pts} poeng</b> · Spillrating {end.delta! >= 0 ? '+' : ''}{end.delta}</p>}
+          {bot && !!end.hints && <p class="small muted">Du brukte {end.hints} trekkforslag: −{end.penalty} XP{end.result !== 'loss' ? ', halve poeng og halv ratinggevinst' : ''}.</p>}
           {end.result === 'loss' && <p class="small muted">Tips: se gjennom partiet for å finne de største feilene. Det er slik man blir bedre.</p>}
         </div>
         <div class="stack">
@@ -319,6 +338,7 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
   const [counts, setCounts] = useState({ tabbe: 0, feil: 0, unoyaktig: 0, gode: 0 });
   const [sel, setSel] = useState(0);
   const [curve, setCurve] = useState<{ ply: number; v: number }[]>([]);
+  const [saved, setSaved] = useState(0);
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
@@ -365,7 +385,16 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
         } else replay.move(m);
       }
       out.sort((a, b) => b.loss - a.loss);
-      if (alive.current) { setMistakes(out.slice(0, 5)); setCounts(cnt); setCurve(pts); }
+      // De største feilene blir egne oppgaver under «Mine feil»
+      const toSave = out.filter((m) => m.loss >= 150).slice(0, 3);
+      if (toSave.length) update((s) => {
+        for (const m of toSave) {
+          const key = m.fenBefore.split(' ').slice(0, 4).join(' ');
+          if (s.myPuzzles.some((x) => x.fen.split(' ').slice(0, 4).join(' ') === key)) continue;
+          s.myPuzzles = [{ id: 'm' + Date.now().toString(36) + m.ply, fen: m.fenBefore, best: m.best, played: m.played, date: today(), solved: 0 }, ...s.myPuzzles].slice(0, 60);
+        }
+      });
+      if (alive.current) { setMistakes(out.slice(0, 5)); setCounts(cnt); setCurve(pts); setSaved(toSave.length); }
     })();
   }, []);
 
@@ -384,6 +413,7 @@ function Review({ pgn, color, onBack }: { pgn: string; color: 'w' | 'b'; onBack:
           </div>
           {curve.length > 2 && <div class="card"><div class="label">Hvem ledet?</div><EvalCurve pts={curve} marks={mistakes.map((m) => m.ply)} /></div>}
           {mistakes.length === 0 && <div class="card center"><b>Ingen store feil! Supert parti.</b></div>}
+          {saved > 0 && <a href="#/oppgaver/mine" class="card click goldline" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}><b>{saved === 1 ? 'Én feil' : `${saved} feil`} er lagret som oppgaver</b><div class="small muted">Øv på dem under Oppgaver → Mine feil, så sitter det neste gang.</div></a>}
           {cur && (
             <>
               <div class="tabs">{mistakes.map((m, i) => <button key={i} class={`tab ${i === sel ? 'on' : ''}`} onClick={() => setSel(i)}>Trekk {Math.floor(m.ply / 2) + 1}: {m.kind}</button>)}</div>
@@ -435,7 +465,7 @@ function BotStats({ bot }: { bot: Bot }) {
     <div class="card desktop-only" style={{ marginTop: '12px' }}>
       <div class="row"><Avatar piece={bot.piece} color={bot.color} size={40} /><div class="grow"><b>{bot.name}</b><div class="small muted">ca. {bot.elo} · {bot.style}</div></div></div>
       <p class="small" style={{ margin: '8px 0 0' }}>Dere har spilt {rec.w + rec.l + rec.d} partier: {rec.w} seire, {rec.l} tap, {rec.d} remis.</p>
-      <p class="small muted" style={{ margin: '6px 0 0' }}>Spillratingen din er {Math.round(s.playRating)}. Trekkforslag koster {HINT_XP} XP og halv ratinggevinst.</p>
+      <p class="small muted" style={{ margin: '6px 0 0' }}>Spillratingen din er {Math.round(s.playRating)}. Seier gir {Math.round(bot.elo / 25)} poeng. Trekkforslag koster {HINT_XP} XP og halverer poeng og ratinggevinst.</p>
     </div>
   );
 }

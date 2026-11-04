@@ -1,4 +1,4 @@
-// Alle leksjonene i Sjakkreisen. Filen er ren data, så den er lett å endre og utvide.
+// Alle leksjonene i Rokade. Filen er ren data, så den er lett å endre og utvide.
 // Sjekk at alt er gyldig med: npm run check-lessons
 
 export type Hl = 'good' | 'bad' | 'hint' | 'target' | 'mark';

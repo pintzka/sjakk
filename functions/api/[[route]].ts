@@ -122,6 +122,9 @@ export const onRequest = async ({ request, env, params }: Ctx): Promise<Response
     }
     if (a === 'users' && method === 'GET') {
       const { results } = await env.DB.prepare(`SELECT u.id, u.name, u.created, COALESCE(p.xp,0) AS xp, COALESCE(p.puzzle_rating,0) AS puzzle, COALESCE(p.play_rating,0) AS play, COALESCE(p.updated,0) AS active,
+          json_extract(p.data, '$.score.week') AS week, COALESCE(json_extract(p.data, '$.score.weekPts'), 0) AS weekPts,
+          COALESCE(json_extract(p.data, '$.score.total'), 0) AS total, COALESCE(json_extract(p.data, '$.rush.best'), 0) AS rush,
+          COALESCE(json_extract(p.data, '$.streak.count'), 0) AS streak, json_extract(p.data, '$.streak.lastDay') AS streakDay,
           (SELECT COUNT(*) FROM games g WHERE (g.white = u.id OR g.black = u.id) AND g.status = 'done') AS games
         FROM users u LEFT JOIN progress p ON p.user_id = u.id ORDER BY xp DESC`).all();
       return json({ users: results });

@@ -10,6 +10,10 @@ export interface Settings {
   v?: number;
 }
 
+// Egen oppgave laget av en feil fra et parti (fen før feilen, beste trekk)
+export interface MyPuzzle { id: string; fen: string; best: string; played: string; date: string; solved: number }
+export interface SavedGame { bot: string; color: 'w' | 'b'; pgn: string; hints: number; hintsUsed: number }
+
 export interface GameRecord { bot: string; result: 'win' | 'loss' | 'draw'; color: 'w' | 'b'; date: string; pgn: string; moves: number }
 
 export interface Progress {
@@ -35,11 +39,27 @@ export interface Progress {
   daily: Record<string, boolean>;
   stats: { mates: number; forks: number; promotions: number; hintsUsed: number };
   settings: Settings;
+  score: { week: string; weekPts: number; total: number };
+  rush: { best: number; plays: number };
+  myPuzzles: MyPuzzle[];
+  goal: { day: string; puzzles: number; games: number; lessons: number; done: boolean };
+  savedGame: SavedGame | null;
 }
 
 const KEY = 'sjakkreisen.v1';
 
-export const today = () => new Date().toISOString().slice(0, 10);
+// Lokal dato (norsk tid), ikke UTC
+export const today = () => new Date().toLocaleDateString('sv-SE');
+
+// ISO-uke, f.eks. «2026-W45». Ukepoengene starter på nytt hver mandag.
+export function weekId(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const w = Math.ceil(((t.getTime() - y0.getTime()) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(w).padStart(2, '0')}`;
+}
 const dayDiff = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
 function fresh(): Progress {
@@ -52,6 +72,11 @@ function fresh(): Progress {
     review: [], recent: [], games: [], daily: {},
     stats: { mates: 0, forks: 0, promotions: 0, hintsUsed: 0 },
     settings: { sound: true, boardTheme: 'tre', showDests: true, theme: 'light', v: 2 },
+    score: { week: weekId(), weekPts: 0, total: 0 },
+    rush: { best: 0, plays: 0 },
+    myPuzzles: [],
+    goal: { day: today(), puzzles: 0, games: 0, lessons: 0, done: false },
+    savedGame: null,
   };
 }
 
@@ -62,7 +87,7 @@ function load(): Progress {
       const data = JSON.parse(raw);
       const base = fresh();
       const settings = data.settings?.v === 2 ? { ...base.settings, ...data.settings } : { ...base.settings, sound: data.settings?.sound ?? true, showDests: data.settings?.showDests ?? true };
-      return { ...base, ...data, settings, stats: { ...base.stats, ...data.stats }, puzzles: { ...base.puzzles, ...data.puzzles }, streak: { ...base.streak, ...data.streak } };
+      return { ...base, ...data, settings, stats: { ...base.stats, ...data.stats }, puzzles: { ...base.puzzles, ...data.puzzles }, streak: { ...base.streak, ...data.streak }, score: { ...base.score, ...data.score }, rush: { ...base.rush, ...data.rush }, goal: { ...base.goal, ...data.goal } };
     }
   } catch { /* privat modus eller blokkert lagring */ }
   return fresh();
@@ -90,7 +115,7 @@ export function resetProgress() { state = fresh(); save(); }
 export function subscribe(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; }
 export function replaceProgress(data: Partial<Progress>) {
   const base = fresh();
-  state = { ...base, ...data, settings: { ...base.settings, ...data.settings }, stats: { ...base.stats, ...data.stats }, puzzles: { ...base.puzzles, ...data.puzzles }, streak: { ...base.streak, ...data.streak } } as Progress;
+  state = { ...base, ...data, settings: { ...base.settings, ...data.settings }, stats: { ...base.stats, ...data.stats }, puzzles: { ...base.puzzles, ...data.puzzles }, streak: { ...base.streak, ...data.streak }, score: { ...base.score, ...data.score }, rush: { ...base.rush, ...data.rush }, goal: { ...base.goal, ...data.goal } } as Progress;
   save();
 }
 export function exportCode(): string { return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
@@ -118,6 +143,32 @@ export function addXp(n: number) {
   const after = levelFromXp(state.xp);
   if (after > before) toast({ text: `Nytt nivå: ${after}!`, kind: 'level' });
   checkBadges();
+}
+
+// ---- Poeng (til tabellen) og dagens mål ----
+export function addPoints(n: number) {
+  if (n <= 0) return;
+  const w = weekId();
+  update((s) => {
+    if (s.score.week !== w) s.score = { ...s.score, week: w, weekPts: 0 };
+    s.score.weekPts += Math.round(n);
+    s.score.total += Math.round(n);
+  });
+}
+export function weekPoints(s: Progress) { return s.score.week === weekId() ? s.score.weekPts : 0; }
+
+export const GOAL = { puzzles: 5, games: 1, lessons: 1 };
+export const GOAL_BONUS = 15;
+export function goalOf(s: Progress) { return s.goal.day === today() ? s.goal : { day: today(), puzzles: 0, games: 0, lessons: 0, done: false }; }
+export function goalProgress(kind: 'puzzles' | 'games' | 'lessons') {
+  let finished = false;
+  update((s) => {
+    const g = { ...goalOf(s) };
+    g[kind] += 1;
+    if (!g.done && g.puzzles >= GOAL.puzzles && g.games >= GOAL.games && g.lessons >= GOAL.lessons) { g.done = true; finished = true; }
+    s.goal = g;
+  });
+  if (finished) { addPoints(GOAL_BONUS); toast({ text: `Dagens mål nådd! +${GOAL_BONUS} poeng`, kind: 'badge' }); }
 }
 
 export function touchStreak() {
